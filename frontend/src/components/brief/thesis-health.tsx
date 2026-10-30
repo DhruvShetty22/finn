@@ -14,6 +14,25 @@ export function ThesisHealth({ summary, holdings }: { summary: Brief["summary"];
   const sorted = holdings ? [...holdings].sort((a, b) => ORDER[a.thesis_status] - ORDER[b.thesis_status]) : [];
   const allGood = summary.challenged.length === 0 && summary.theses_intact === summary.theses_total;
 
+  // Before any thesis is drafted there is nothing to guard, so lead with materiality instead of a 0/0.
+  if (summary.theses_total === 0) {
+    return (
+      <section className="px-4 pt-4 pb-5">
+        <div className="eyebrow">Material in this window</div>
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="num text-[2.75rem] leading-none font-semibold tracking-tight">{summary.material}</span>
+          <span className="text-body text-ink-3">
+            + <span className="num">{summary.routine}</span> routine tucked away
+          </span>
+        </div>
+        <p className="mt-3 text-body text-ink-2">{summary.headline}</p>
+        <p className="mt-1 text-small text-ink-3">
+          Theses are being drafted from each company&apos;s concall guidance. Until then FINN ranks by materiality and market reaction.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="px-4 pt-4 pb-5">
       <div className="flex items-end justify-between gap-4">

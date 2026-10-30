@@ -8,6 +8,10 @@ const BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
 export const USING_FIXTURES =
   BASE === "" && (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_USE_FIXTURES === "1");
 const MISCONFIGURED = BASE === "" && !USING_FIXTURES;
+// Dev-only, for integrating while the backend grows: with an API base set, any endpoint that
+// 404s falls back to its fixture. Opt in with NEXT_PUBLIC_FIXTURE_FALLBACK=1 in .env.local.
+export const FIXTURE_FALLBACK =
+  BASE !== "" && process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_FIXTURE_FALLBACK === "1";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -53,7 +57,15 @@ function fixtureUrl(path: string): string | null {
 /** SWR fetcher: keys are API paths such as "/brief?from=…". */
 export async function fetcher<T>(path: string): Promise<T> {
   if (MISCONFIGURED) throw new ApiError(0, "NEXT_PUBLIC_API_BASE is not set");
-  if (!USING_FIXTURES) return getJson<T>(`${BASE}/api${path}`);
+  if (!USING_FIXTURES) {
+    try {
+      return await getJson<T>(`${BASE}/api${path}`);
+    } catch (e) {
+      const url = FIXTURE_FALLBACK && e instanceof ApiError && e.status === 404 ? fixtureUrl(path) : null;
+      if (!url) throw e;
+      return getJson<T>(url);
+    }
+  }
   const url = fixtureUrl(path);
   if (!url) throw new ApiError(404, "No fixture for this path");
   return getJson<T>(url);
@@ -75,7 +87,14 @@ export const api = {
 
   async search(q: string): Promise<SearchResult[]> {
     if (!q.trim()) return [];
-    if (USING_FIXTURES) {
+    if (!USING_FIXTURES) {
+      try {
+        return (await getJson<{ results: SearchResult[] }>(`${BASE}/api/search?q=${encodeURIComponent(q)}`)).results;
+      } catch (e) {
+        if (!(FIXTURE_FALLBACK && e instanceof ApiError && e.status === 404)) throw e;
+      }
+    }
+    {
       const p = await fetcher<Portfolio>("/portfolio");
       const needle = q.trim().toUpperCase();
       const extra = [{ symbol: "KPITTECH", name: "KPIT Technologies" }, { symbol: "POLYCAB", name: "Polycab India" },
@@ -84,8 +103,6 @@ export const api = {
         .filter((r) => r.symbol.includes(needle) || r.name.toUpperCase().includes(needle))
         .slice(0, 8);
     }
-    const res = await getJson<{ results: SearchResult[] }>(`${BASE}/api/search?q=${encodeURIComponent(q)}`);
-    return res.results;
   },
 };
 
@@ -103,41 +120,48 @@ type StreamHandlers = {
  * so the progressive skeleton gets exercised the same way it will against the live API.
  */
 export function streamResearch(symbol: string, h: StreamHandlers): () => void {
-  if (USING_FIXTURES) {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    let cancelled = false;
-    fetcher<ResearchDeck>(`/research/${symbol}`)
-      .then((deck) => {
-        if (cancelled) return;
-        h.onHead?.({ symbol: deck.symbol, name: deck.name, as_of: deck.as_of, sources: deck.sources });
-        const llm = new Set(["snapshot", "ledger", "bull_bear"]);
-        let slow = 0;
-        deck.sections.forEach((s, i) => {
-          const at = llm.has(s.key) ? 900 + 700 * slow++ : 120 + 40 * i;
-          timers.push(setTimeout(() => h.onSection(s), at));
-        });
-        timers.push(setTimeout(() => h.onDone({ symbol, total_cost: deck.total_cost, elapsed_ms: 900 + 700 * slow }),
-          950 + 700 * slow));
-      })
-      .catch((e: unknown) => !cancelled && h.onError(e instanceof ApiError && e.status === 404
-        ? "No research yet for this ticker (fixture mode only has KPITTECH)." : String(e)));
-    return () => {
-      cancelled = true;
-      timers.forEach(clearTimeout);
-    };
-  }
+  if (USING_FIXTURES) return simulateFromFixture(symbol, h);
 
+  let fallback: (() => void) | null = null;
+  let heard = false;
   const es = new EventSource(`${BASE}/api/research/${encodeURIComponent(symbol)}`);
-  es.addEventListener("head", (e) => h.onHead?.(JSON.parse((e as MessageEvent).data)));
-  es.addEventListener("section", (e) => h.onSection(JSON.parse((e as MessageEvent).data)));
-  es.addEventListener("done", (e) => {
-    h.onDone(JSON.parse((e as MessageEvent).data));
-    es.close();
-  });
+  const hear = <T,>(fn: (d: T) => void) => (e: Event) => { heard = true; fn(JSON.parse((e as MessageEvent).data)); };
+  es.addEventListener("head", hear<ResearchHead>((d) => h.onHead?.(d)));
+  es.addEventListener("section", hear<Section>(h.onSection));
+  es.addEventListener("done", hear<Parameters<StreamHandlers["onDone"]>[0]>((d) => { h.onDone(d); es.close(); }));
   es.addEventListener("error", (e) => {
-    const data = (e as MessageEvent).data;
-    h.onError(data ? JSON.parse(data).message : "Connection to the research stream was lost.");
     es.close();
+    const data = (e as MessageEvent).data;
+    if (!heard && !data && FIXTURE_FALLBACK) { fallback = simulateFromFixture(symbol, h); return; }
+    h.onError(data ? JSON.parse(data).message : "Connection to the research stream was lost.");
   });
-  return () => es.close();
+  return () => { es.close(); fallback?.(); };
+}
+
+function simulateFromFixture(symbol: string, h: StreamHandlers): () => void {
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  let cancelled = false;
+  const url = fixtureUrl(`/research/${symbol}`);
+  (url ? getJson<ResearchDeck>(url) : Promise.reject(new ApiError(404, "no fixture")))
+    .then((deck) => {
+      if (cancelled) return;
+      h.onHead?.({ symbol: deck.symbol, name: deck.name, as_of: deck.as_of, sources: deck.sources });
+      const llm = new Set(["snapshot", "ledger", "bull_bear"]);
+      let slow = 0;
+      deck.sections.forEach((s, i) => {
+        const at = llm.has(s.key) ? 900 + 700 * slow++ : 120 + 40 * i;
+        timers.push(setTimeout(() => h.onSection(s), at));
+      });
+      timers.push(setTimeout(() => h.onDone({ symbol, total_cost: deck.total_cost, elapsed_ms: 900 + 700 * slow }),
+        950 + 700 * slow));
+    })
+    .catch((e: unknown) => {
+      if (cancelled) return;
+      h.onError(e instanceof ApiError && e.status === 404
+        ? "No research yet for this ticker (fixtures only cover KPITTECH)." : String(e));
+    });
+  return () => {
+    cancelled = true;
+    timers.forEach(clearTimeout);
+  };
 }

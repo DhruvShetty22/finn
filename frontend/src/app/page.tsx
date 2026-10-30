@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { AnimatePresence, motion } from "motion/react";
 import type { Brief, Item, Portfolio } from "@/lib/types";
-import { api, USING_FIXTURES } from "@/lib/api";
+import { api, FIXTURE_FALLBACK, USING_FIXTURES } from "@/lib/api";
 import { ItemCard } from "@/components/brief/item-card";
 import { ThesisHealth } from "@/components/brief/thesis-health";
 import { Routine } from "@/components/brief/routine";
@@ -49,7 +49,9 @@ export default function BriefPage() {
           <span className="text-title font-semibold tracking-tight">FINN</span>
           <span className="text-micro text-ink-3">{data?.window.label ?? "Brief"}</span>
         </div>
-        {USING_FIXTURES && <span className="rounded-full border border-watch/40 px-2 py-0.5 text-micro text-watch">fixtures</span>}
+        {(USING_FIXTURES || FIXTURE_FALLBACK) && (
+          <span className="rounded-full border border-watch/40 px-2 py-0.5 text-micro text-watch">{USING_FIXTURES ? "fixtures" : "live + fixtures"}</span>
+        )}
       </header>
 
       {error && !data ? (
@@ -67,7 +69,8 @@ export default function BriefPage() {
           <div className={`transition-opacity ${isLoading ? "opacity-50" : ""}`}>
             {data.window.widened_from && (
               <p className="mx-4 mt-2 rounded-xl bg-surface px-3 py-2 text-small text-ink-2">
-                Quiet {data.window.widened_from}. Showing <span className="text-ink">{data.window.label.toLowerCase()}</span> instead.
+                Nothing material in the {data.window.widened_from.toLowerCase()}, so this shows the{" "}
+                <span className="text-ink">{data.window.label.toLowerCase()}</span>.
               </p>
             )}
 

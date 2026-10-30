@@ -31,7 +31,7 @@ export function ThesisView({ params }: { params: Promise<{ symbol: string }> }) 
     />
   );
 
-  if (error instanceof ApiError && error.status === 404) {
+  if ((error instanceof ApiError && error.status === 404) || (data && data.pillars.length === 0 && !editing)) {
     return (
       <div>
         {header}
