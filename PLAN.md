@@ -114,14 +114,19 @@ Each phase is sized to fit one session. Its **Done when** line is the handoff a 
 
 ### Phase 1: Data plumbing (≈4–5h) · *Session 2, Fri night / Sat early*
 Plumbing only: get it working and don't gold-plate it.
-- [ ] **EOD prices:** batch `yf.download([...".NS"], period="6mo")`, then upsert. Fallback if Yahoo rate-limits: the NSE daily bhavcopy CSV.
-- [ ] **Announcements (NSE):** one bulk call per date range (see the Phase 0 findings), filtered to the portfolio. For research or ad-hoc symbols, add `&symbol=`. Store `seq_id`, `desc` (subject), `attchmntText`, `attchmntFile` (PDF), `sort_date` and `hasXbrl`. **Fallback adapter: BSE API**, because NSE often blocks cloud IPs.
-- [ ] **Screener.in fetcher:** for any symbol, get the quarterly, P&L, balance sheet, cash flow and ratios tables as structured JSON, plus **document links** (annual reports and concall transcripts). Try consolidated first, then fall back to standalone.
-- [ ] **PDF fetch + text extraction** with caching by URL/sha, and detection of scanned PDFs (low text density → flag for the vision model).
-- [ ] Polite rate limits, retries and an on-disk HTTP cache, so development doesn't hammer the sources.
-- [ ] Seed the DB locally: 6 months of prices and 30 days of announcements for the portfolio.
+- [x] **EOD prices:** batch `yf.download([...".NS"], period="6mo")`, then upsert. Fallback if Yahoo rate-limits: the NSE daily bhavcopy CSV.
+- [x] **Announcements (NSE):** one bulk call per date range (see the Phase 0 findings), filtered to the portfolio. For research or ad-hoc symbols, add `&symbol=`. Store `seq_id`, `desc` (subject), `attchmntText`, `attchmntFile` (PDF), `sort_date` and `hasXbrl`. **Fallback adapter: BSE API**, because NSE often blocks cloud IPs.
+- [x] **Screener.in fetcher:** for any symbol, get the quarterly, P&L, balance sheet, cash flow and ratios tables as structured JSON, plus **document links** (annual reports and concall transcripts). Try consolidated first, then fall back to standalone.
+- [x] **PDF fetch + text extraction** with caching by URL/sha, and detection of scanned PDFs (low text density → flag for the vision model).
+- [x] Polite rate limits, retries and an on-disk HTTP cache, so development doesn't hammer the sources.
+- [x] Seed the DB locally: 6 months of prices and 30 days of announcements for the portfolio.
 - [ ] **Walking skeleton deploy:** FastAPI `/health` + `/announcements` on the host, and a bare Next.js page on Vercel showing the raw list. This proves the deploy path on day 1 instead of Sunday.
-- [ ] Test the NSE fetch **from GitHub Actions** early, to find out whether it gets blocked.
+- [x] Test the NSE fetch **from GitHub Actions** early, to find out whether it gets blocked.
+- **Status (Fri 30 Oct, 18:45):** all built, in `finn/ingest/*` with `python -m finn.jobs seed|eod|filings|fundamentals`.
+  - Local DB: 2,620 equities, 6 months of EOD for 18 holdings, 246 filings over 30 days, screener data for 22 companies.
+  - **CI probe passed:** NSE bulk, screener, Yahoo and BSE are all reachable from GitHub runners, so the BSE fallback is a contingency, not needed now.
+  - The deploy is ready (`backend/Dockerfile`, tested locally; `render.yaml`) and **waits on the Neon, Render and Vercel accounts**.
+  - Gotcha: the newest concall often has **no transcript yet** (published days later), so the ledger anchors on the latest call that has one.
 - **Done when:** `python -m finn.jobs.run_eod` and `run_filings` populate the DB, `screener.py SYMBOL` returns tables and document links for an arbitrary ticker, and the skeleton is live on a phone.
 
 ### Phase 2: Push engine (≈4–5h) · *Session 3, Sat morning*

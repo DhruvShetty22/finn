@@ -25,7 +25,7 @@ DATA.mkdir(parents=True, exist_ok=True)
 
 
 def _db_url() -> str:
-    url = os.getenv("DATABASE_URL", "sqlite:///data/finn.db")
+    url = os.getenv("DATABASE_URL") or f"sqlite:///{DATA / 'finn.db'}"
     if url.startswith("sqlite:///") and not url.startswith("sqlite:////"):
         # relative sqlite paths are relative to the repo root, not the cwd
         url = f"sqlite:///{ROOT / url.removeprefix('sqlite:///')}"
