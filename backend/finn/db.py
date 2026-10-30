@@ -6,7 +6,7 @@ Push/pull phases add columns to Announcement and new tables; keep this file the 
 import datetime as dt
 from datetime import datetime
 
-from sqlalchemy import JSON, Column, Text
+from sqlalchemy import JSON, Column, Text, inspect, text
 from sqlmodel import Field, Session, SQLModel, create_engine
 
 from finn.config import DATABASE_URL
@@ -47,6 +47,10 @@ class Announcement(SQLModel, table=True):
     has_xbrl: bool = False
     source: str = "NSE"
     raw: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    # filled by finn.push.classify (rules) or the cheap LLM for leftovers
+    category: str | None = Field(default=None, index=True)
+    role: str = "primary"  # primary | ancillary (deck, newspaper ad, record date...)
+    cls_source: str | None = None  # rule | llm
 
 
 class Document(SQLModel, table=True):
@@ -71,11 +75,85 @@ class Fundamentals(SQLModel, table=True):
     data: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
+class Enrichment(SQLModel, table=True):
+    """FINN's reading of one event, keyed by the event's primary filing id."""
+
+    id: str = Field(primary_key=True)
+    headline: str | None = None
+    card: dict | None = Field(default=None, sa_column=Column(JSON))
+    facts: dict = Field(default_factory=dict, sa_column=Column(JSON))  # materiality inputs (deal size, rating move...)
+    error: str | None = None
+    updated_at: datetime
+
+
+class ItemState(SQLModel, table=True):
+    """Triage gestures on brief items (event ids)."""
+
+    id: str = Field(primary_key=True)
+    seen: bool = False
+    kept: bool = False
+
+
+class Alert(SQLModel, table=True):
+    id: str = Field(primary_key=True)  # deterministic: kind:symbol:date[:item]
+    ts: datetime = Field(index=True)
+    symbol: str
+    kind: str  # volume | price | category | thesis
+    message: str
+    value: float | None = None
+    threshold: float | None = None
+    item_id: str | None = None
+    seen: bool = False
+
+
+class Setting(SQLModel, table=True):
+    key: str = Field(primary_key=True)
+    value: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class LLMCall(SQLModel, table=True):
+    """Every model call (and cache hit), for the cost panel and the writeup."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    ts: datetime
+    purpose: str = Field(index=True)
+    model: str
+    tok_in: int = 0
+    tok_out: int = 0
+    tok_think: int = 0
+    inr: float = 0.0
+    cached: bool = False
+    ms: int = 0
+    key: str = Field(index=True)
+
+
+class LLMCache(SQLModel, table=True):
+    key: str = Field(primary_key=True)  # sha256(model, prompt, attachments, schema)
+    model: str
+    response: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime
+
+
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 
 def init_db() -> None:
     SQLModel.metadata.create_all(engine)
+    _add_missing_columns()
+
+
+def _add_missing_columns() -> None:
+    """create_all never alters existing tables; add new nullable columns so iterating on the schema needs no reseed."""
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table in SQLModel.metadata.sorted_tables:
+            have = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name not in have:
+                    ddl = col.type.compile(dialect=engine.dialect)
+                    default = col.default.arg if col.default is not None and not callable(col.default.arg) else None
+                    clause = f" DEFAULT {default!r}" if isinstance(default, str) else (f" DEFAULT {int(default)}" if isinstance(default, bool) else "")
+                    conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {ddl}{clause}'))
 
 
 def session() -> Session:
