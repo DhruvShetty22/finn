@@ -1,0 +1,20 @@
+# Manual connectivity check: can GitHub's runners reach NSE, screener, BSE and Yahoo?
+# NSE is known to block some cloud IP ranges; this decides whether the cron needs the BSE fallback.
+name: probe-sources
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: filings (NSE bulk API)
+        run: uv run python -m finn.jobs filings --days 2
+      - name: fundamentals (screener)
+        run: uv run python -m finn.jobs fundamentals KPITTECH
+      - name: prices (Yahoo)
+        run: uv run python -m finn.jobs eod
+      - name: BSE PDF host
+        run: curl -s -o /dev/null -w "bse %{http_code}\n" -A "Mozilla/5.0" -e https://www.bseindia.com/ "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d07f9c52-5c5a-443b-b239-6acd5e94b97a.pdf"
