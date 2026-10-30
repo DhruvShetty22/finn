@@ -166,6 +166,7 @@ For `PUT`, send `{ pillars: { id?, text, metric, target, period }[] }`. Pillars 
 **Server-Sent Events.** One `section` event per section as it completes, then `done`.
 `GET /api/research/{symbol}?format=json` returns the whole cached deck at once. Fixture: `research_KPITTECH.json`
 ```ts
+event: head      data: { symbol, name, as_of, sources: Citation[] }   // always first, before any section
 event: section   data: Section
 event: done      data: { symbol, total_cost: Cost, elapsed_ms: number }
 event: error     data: { message }

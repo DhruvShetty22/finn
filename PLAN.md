@@ -101,8 +101,8 @@ Each phase is sized to fit one session. Its **Done when** line is the handoff a 
 - [x] **Research set:** KPITTECH, DIXON (in the portfolio), POLYCAB, PERSISTENT (outside). *Confirm on screener in Phase 1 that they have transcripts.*
 - [x] `git init`, repo layout, `.gitignore` (the brief PDFs are excluded), `.env.example`, uv backend on Python 3.12 with dependencies installed, Next.js scaffold.
 - [x] `contracts/api.md` + 6 fixtures (brief, alerts, rules, portfolio, thesis, research).
-- [ ] `GEMINI_API_KEY` in `.env`, then list the available models and set the tiers. **(needs you)**
-- [ ] Create the GitHub remote and push. **(needs your OK: public or private)**
+- [x] `GEMINI_API_KEY` in `.env`; models probed and tiers set (see D2).
+- [x] Private GitHub remote `DhruvShetty22/finn`, pushed. Make it public at submission.
 - **Done when:** the repo is pushed, the portfolio list is committed as `backend/finn/portfolio.yaml`, the contracts and fixtures exist, and the keys work.
 
 **What we learned while probing (Phase 0):**
@@ -226,7 +226,7 @@ The principle is **numbers from code, words from documents, nothing from model m
 
 ## 6. Decisions (resolved Fri 30 Oct)
 - **D1 Stack:** Next.js PWA + FastAPI ✅
-- **D2 LLM:** Gemini only ✅ (tiers: Flash-Lite / Flash / Pro-or-Flash-thinking)
+- **D2 LLM:** Gemini only ✅. Probed the free tier on 30 Oct: `gemini-3.5-flash-lite` (cheap, ~1s), `gemini-3.6-flash` (extract; reason with a larger thinking budget), fallbacks `gemini-3.5-flash` / `gemini-3.1-flash-lite`. **Pro = 429 (no free quota)**; 3.7/3.8-flash = 504 timeouts. The router uses per-tier fallback chains (`FINN_MODEL_*` in `.env.example`).
 - **D3 Hosting:** Vercel + Render/Fly + Neon ✅
 - **D4 Concept:** **Thesis Guardian** ✅ (§1). Alternatives considered: Stories brief, Analyst chat thread, plain Triage inbox (still the fallback).
 - **D5 Hours:** about 20h over Sat and Sun ✅, so we target P0 + P1 and take P2 items opportunistically.
