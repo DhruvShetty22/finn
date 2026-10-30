@@ -64,7 +64,9 @@ export function ItemCard({ item, defaultOpen, onTriage }: {
             <time className="text-ink-3" dateTime={item.ts}>{when(item.ts)}</time>
             {!item.seen && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" aria-label="Unseen" />}
           </div>
-          <h3 className="mt-1.5 text-body leading-snug font-medium text-ink">{item.headline}</h3>
+          <h3 className={`mt-1.5 text-body leading-snug font-medium text-ink ${open ? "" : "line-clamp-2"}`}>{item.headline}</h3>
+          {/* Why it ranks here: always visible, since an unexplained rank is a black box. */}
+          <p className={`mt-1 truncate text-micro ${item.why.startsWith("⚑") ? "text-down" : "text-ink-3"}`}>{item.why}</p>
           {v && item.thesis && (
             <div className={`mt-2.5 rounded-lg px-2.5 py-2 ${v.soft}`}>
               <div className={`text-micro font-semibold ${v.text}`}>
@@ -76,10 +78,14 @@ export function ItemCard({ item, defaultOpen, onTriage }: {
           )}
         </button>
 
-        {open && item.card && (
+        {open && (
           <div className="px-4 pb-3">
-            <CardBody card={item.card} />
-            {item.card.kind === "results" && <p className="mt-2 text-small text-ink-2">{item.card.verdict}</p>}
+            {item.card && <CardBody card={item.card} />}
+            {item.card?.kind === "results" && <p className="mt-2 text-small text-ink-2">{item.card.verdict}</p>}
+            <p className={`text-micro text-ink-3 ${item.card ? "mt-2" : ""}`}>
+              {item.subject !== item.headline && <>Filed as &ldquo;{item.subject}&rdquo; · </>}
+              {item.source} · rank <span className="num">{item.score}</span>/100
+            </p>
           </div>
         )}
 
@@ -92,7 +98,7 @@ export function ItemCard({ item, defaultOpen, onTriage }: {
               {item.market.vol_ratio >= 1.5 && <span> · {item.market.vol_ratio.toFixed(1)}× vol</span>}
             </span>
           ) : (
-            <span className="truncate text-ink-3">{item.why}</span>
+            <span />
           )}
           <span className="ml-auto flex shrink-0 items-center gap-3">
             {item.pdf_url && (
@@ -111,7 +117,6 @@ export function ItemCard({ item, defaultOpen, onTriage }: {
             )}
           </span>
         </footer>
-        {open && item.market && <div className="-mt-1 px-4 pb-2.5 text-micro text-ink-3">{item.why}</div>}
       </motion.article>
     </div>
   );

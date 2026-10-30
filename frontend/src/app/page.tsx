@@ -60,7 +60,7 @@ export default function BriefPage() {
         <BriefSkeleton />
       ) : (
         <>
-          <ThesisHealth summary={data.summary} holdings={portfolio?.holdings} />
+          <ThesisHealth summary={data.summary} holdings={portfolio?.holdings} material={[...data.top, ...data.worth_reading]} />
 
           <div className="sticky top-0 z-20 bg-bg/85 px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 backdrop-blur-xl">
             <WindowPicker value={win} onChange={setWin} />
@@ -84,7 +84,7 @@ export default function BriefPage() {
               {unkept(data.top).length === 0 ? (
                 <EmptyState title="All clear" body="Nothing material against your theses in this window." />
               ) : (
-                unkept(data.top).map((it) => <Triageable key={it.id} item={it} open onTriage={triage} />)
+                unkept(data.top).map((it) => <Triageable key={it.id} item={it} open={!!(it.card || it.thesis)} onTriage={triage} />)
               )}
             </Group>
 

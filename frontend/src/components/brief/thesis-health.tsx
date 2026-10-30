@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { Brief, Holding } from "@/lib/types";
+import type { Brief, Holding, Item } from "@/lib/types";
+import { CATEGORY_LABEL } from "@/lib/format";
 import { STATUS_META } from "../ui";
 
 const ORDER = { challenged: 0, watch: 1, intact: 2, none: 3 } as const;
@@ -10,7 +11,9 @@ const ORDER = { challenged: 0, watch: 1, intact: 2, none: 3 } as const;
  * The top of the Brief: not "what happened" but "is my conviction still justified".
  * One tile per holding, worst first, so a challenged thesis is the first thing the eye lands on.
  */
-export function ThesisHealth({ summary, holdings }: { summary: Brief["summary"]; holdings: Holding[] | undefined }) {
+export function ThesisHealth({ summary, holdings, material }: {
+  summary: Brief["summary"]; holdings: Holding[] | undefined; material: Item[];
+}) {
   const sorted = holdings ? [...holdings].sort((a, b) => ORDER[a.thesis_status] - ORDER[b.thesis_status]) : [];
   const allGood = summary.challenged.length === 0 && summary.theses_intact === summary.theses_total;
 
@@ -18,14 +21,12 @@ export function ThesisHealth({ summary, holdings }: { summary: Brief["summary"];
   if (summary.theses_total === 0) {
     return (
       <section className="px-4 pt-4 pb-5">
-        <div className="eyebrow">Material in this window</div>
+        <div className="eyebrow">This window</div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="num text-[2.75rem] leading-none font-semibold tracking-tight">{summary.material}</span>
-          <span className="text-body text-ink-3">
-            + <span className="num">{summary.routine}</span> routine tucked away
-          </span>
+          <span className="text-body text-ink-3">worth your attention</span>
         </div>
-        <p className="mt-3 text-body text-ink-2">{summary.headline}</p>
+        <p className="mt-3 text-body text-ink-2">{breakdown(material)}{summary.routine > 0 && <> · <span className="num">{summary.routine}</span> routine tucked away</>}</p>
         <p className="mt-1 text-small text-ink-3">
           Theses are being drafted from each company&apos;s concall guidance. Until then FINN ranks by materiality and market reaction.
         </p>
@@ -74,4 +75,15 @@ export function ThesisHealth({ summary, holdings }: { summary: Brief["summary"];
       <p className="mt-3 text-body text-ink-2">{allGood ? "Nothing in this window threatens your theses." : summary.headline}</p>
     </section>
   );
+}
+
+/** "5 results · 2 M&A · 1 management", most common first. */
+function breakdown(items: Item[]): string {
+  const n = new Map<string, number>();
+  for (const it of items) n.set(it.category, (n.get(it.category) ?? 0) + 1);
+  return [...n.entries()].sort((a, b) => b[1] - a[1])
+    .map(([c, k]) => {
+      const l = CATEGORY_LABEL[c] ?? c;
+      return `${k} ${l === l.toUpperCase() ? l : l.toLowerCase()}`; // keep acronyms like M&A
+    }).join(" · ");
 }
