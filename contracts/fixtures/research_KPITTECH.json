@@ -1,0 +1,142 @@
+{
+  "_fixture": "Illustrative values for frontend development only. Same shape as ?format=json; the SSE stream sends each element of `sections` as its own event.",
+  "symbol": "KPITTECH",
+  "name": "KPIT Technologies Limited",
+  "as_of": "2026-10-30",
+  "sources": [
+    { "doc": "Annual Report FY26", "date": "2026-06-30", "url": "https://example.com/kpit-ar-fy26.pdf", "page": null, "quote": null },
+    { "doc": "Q2 FY27 concall", "date": "2026-10-29", "url": "https://example.com/kpit-q2fy27.pdf", "page": null, "quote": null },
+    { "doc": "Q1 FY27 concall", "date": "2026-07-23", "url": "https://example.com/kpit-q1fy27.pdf", "page": null, "quote": null },
+    { "doc": "Q4 FY26 concall", "date": "2026-04-24", "url": "https://example.com/kpit-q4fy26.pdf", "page": null, "quote": null },
+    { "doc": "Q3 FY26 concall", "date": "2026-01-22", "url": "https://example.com/kpit-q3fy26.pdf", "page": null, "quote": null },
+    { "doc": "Q2 FY26 concall", "date": "2025-10-28", "url": "https://example.com/kpit-q2fy26.pdf", "page": null, "quote": null }
+  ],
+  "sections": [
+    {
+      "key": "financials", "status": "ok", "title": "Financial snapshot",
+      "takeaway": "₹6.9k Cr revenue (TTM) at a 21% EBITDA margin, with ROCE above 30%",
+      "data": {
+        "tiles": [
+          { "label": "Revenue (TTM)", "value": 6912, "unit": "cr", "delta_pct": 16.4, "delta_label": "YoY" },
+          { "label": "EBITDA margin", "value": 21.2, "unit": "%", "delta_pct": -0.3, "delta_label": "pp YoY" },
+          { "label": "PAT (TTM)", "value": 905, "unit": "cr", "delta_pct": 12.1, "delta_label": "YoY" },
+          { "label": "ROCE", "value": 33.8, "unit": "%", "delta_pct": null, "delta_label": null },
+          { "label": "ROE", "value": 27.5, "unit": "%", "delta_pct": null, "delta_label": null },
+          { "label": "Debt / Equity", "value": 0.04, "unit": "x", "delta_pct": null, "delta_label": null }
+        ]
+      },
+      "citations": [], "cost": { "tokens_in": 0, "tokens_out": 0, "inr": 0, "cached": false, "model": null }
+    },
+    {
+      "key": "trajectory", "status": "ok", "title": "Trajectory",
+      "takeaway": "Revenue growth halved from 30%+ to 16%, while margins have plateaued around 21%",
+      "data": {
+        "periods": ["FY22", "FY23", "FY24", "FY25", "FY26", "TTM"],
+        "series": [
+          { "metric": "Revenue", "unit": "cr", "values": [2432, 3365, 4872, 5842, 6540, 6912], "cagr_3y": 24.9, "cagr_5y": null },
+          { "metric": "EBITDA margin", "unit": "%", "values": [19.6, 19.9, 20.4, 21.1, 21.3, 21.2], "cagr_3y": null, "cagr_5y": null },
+          { "metric": "PAT", "unit": "cr", "values": [273, 386, 597, 836, 880, 905], "cagr_3y": 31.4, "cagr_5y": null }
+        ],
+        "callouts": [
+          { "kind": "compressing", "text": "YoY revenue growth: 38% (FY23), then 45%, 20%, 12%, 16% (TTM)" },
+          { "kind": "growing", "text": "PAT grew faster than revenue through FY25 on operating leverage" }
+        ]
+      },
+      "citations": [], "cost": { "tokens_in": 0, "tokens_out": 0, "inr": 0, "cached": false, "model": null }
+    },
+    {
+      "key": "balance_sheet", "status": "ok", "title": "Balance sheet",
+      "takeaway": "Net cash, and receivable days creeping up from 62 to 71",
+      "data": {
+        "tiles": [
+          { "label": "Net debt", "value": -1240, "unit": "cr", "delta_pct": null, "delta_label": "net cash" },
+          { "label": "Debt / Equity", "value": 0.04, "unit": "x", "delta_pct": null, "delta_label": null }
+        ],
+        "wc": { "periods": ["FY22", "FY23", "FY24", "FY25", "FY26"], "debtor_days": [62, 64, 66, 69, 71], "inventory_days": [0, 0, 0, 0, 0], "payable_days": [24, 23, 25, 22, 21], "ccc": [38, 41, 41, 47, 50] }
+      },
+      "citations": [], "cost": { "tokens_in": 0, "tokens_out": 0, "inr": 0, "cached": false, "model": null }
+    },
+    {
+      "key": "cash_quality", "status": "ok", "title": "Cash quality",
+      "takeaway": "Profits do turn into cash: 5-year CFO/PAT of 1.12",
+      "data": {
+        "periods": ["FY22", "FY23", "FY24", "FY25", "FY26"],
+        "cfo": [420, 460, 780, 950, 990], "pat": [273, 386, 597, 836, 880], "fcf": [330, 310, 560, 760, 790],
+        "cfo_to_pat": [1.54, 1.19, 1.31, 1.14, 1.12], "cfo_to_pat_5y": 1.12,
+        "verdict": "good"
+      },
+      "citations": [], "cost": { "tokens_in": 0, "tokens_out": 0, "inr": 0, "cached": false, "model": null }
+    },
+    {
+      "key": "snapshot", "status": "ok", "title": "Business snapshot",
+      "takeaway": "Pure-play automotive software partner; 3 regions and 3 practices, top-heavy client mix",
+      "data": {
+        "what_it_does": "Builds embedded software for car makers (electric powertrains, autonomous driving, connected vehicle middleware) on long multi-year engagements.",
+        "segments": [
+          { "name": "USA", "share_pct": 38, "growth_pct": 9.2 },
+          { "name": "UK & Europe", "share_pct": 44, "growth_pct": 21.4 },
+          { "name": "Rest of World", "share_pct": 18, "growth_pct": 18.0 }
+        ],
+        "key_facts": [ "Top 10 clients ≈ 70% of revenue", "Practices: Feature Development & Integration, Architecture & Middleware, Cloud-based Connected Services" ]
+      },
+      "citations": [ { "doc": "Annual Report FY26", "date": "2026-06-30", "url": "https://example.com/kpit-ar-fy26.pdf", "page": 42, "quote": null } ],
+      "cost": { "tokens_in": 18400, "tokens_out": 620, "inr": 0.11, "cached": false, "model": "gemini-flash" }
+    },
+    {
+      "key": "ledger", "status": "ok", "title": "Promised vs delivered",
+      "takeaway": "Margins delivered every quarter, but growth guidance was cut once and is now at risk again",
+      "data": {
+        "score": { "delivered": 4, "partly": 2, "missed": 2, "too_early": 1 },
+        "quarters": ["Q3 FY26", "Q4 FY26", "Q1 FY27", "Q2 FY27"],
+        "promises": [
+          { "id": "pr-1", "said_in": "Q2 FY26 concall", "said_on": "2025-10-28", "checked_in": "Q3 FY26", "metric": "ebitda_margin",
+            "quote": "We should be able to hold margins at 21 percent in the second half.", "page": 6, "target": "21%",
+            "actual": "21.3%", "verdict": "delivered", "note": "Held at 21.3%", "url": "https://example.com/kpit-q2fy26.pdf" },
+          { "id": "pr-2", "said_in": "Q2 FY26 concall", "said_on": "2025-10-28", "checked_in": "FY26", "metric": "revenue_growth",
+            "quote": "Full-year growth should be in the high teens.", "page": 4, "target": "17–19%",
+            "actual": "12.0%", "verdict": "missed", "note": "European OEM programme delays", "url": "https://example.com/kpit-q2fy26.pdf" },
+          { "id": "pr-3", "said_in": "Q4 FY26 concall", "said_on": "2026-04-24", "checked_in": "Q2 FY27", "metric": "revenue_growth",
+            "quote": "For FY27 we are guiding for constant currency revenue growth in the range of 18 to 22 percent.", "page": 3, "target": "18–22%",
+            "actual": "14.8% (H1)", "verdict": "too_early", "note": "H2 needs ~25% to reach the bottom of the band", "url": "https://example.com/kpit-q4fy26.pdf" },
+          { "id": "pr-4", "said_in": "Q1 FY27 concall", "said_on": "2026-07-23", "checked_in": "Q2 FY27", "metric": "other",
+            "quote": "Deal ramp-ups from two new European clients will start reflecting from Q2.", "page": 8, "target": null,
+            "actual": "Europe +21% YoY", "verdict": "partly", "note": "Europe accelerated; management named only one ramp-up", "url": "https://example.com/kpit-q1fy27.pdf" }
+        ],
+        "synthesis": [
+          { "text": "Margin promises are reliable: guided around 21% for 4 quarters and delivered 21.1–21.4% each time.", "cites": [0, 3] },
+          { "text": "Growth guidance is the weak spot: FY26 was guided at high-teens and came in at 12%. FY27's 18–22% now needs a sharp H2.", "cites": [1, 2] },
+          { "text": "The tone has shifted from 'visibility is strong' (Q4) to 'back-ended year' (Q2), and the team is quieter on specific numbers.", "cites": [1, 3] }
+        ]
+      },
+      "citations": [
+        { "doc": "Q2 FY26 concall", "date": "2025-10-28", "url": "https://example.com/kpit-q2fy26.pdf", "page": 6, "quote": null },
+        { "doc": "Q4 FY26 concall", "date": "2026-04-24", "url": "https://example.com/kpit-q4fy26.pdf", "page": 3, "quote": null },
+        { "doc": "Q1 FY27 concall", "date": "2026-07-23", "url": "https://example.com/kpit-q1fy27.pdf", "page": 8, "quote": null },
+        { "doc": "Q2 FY27 concall", "date": "2026-10-29", "url": "https://example.com/kpit-q2fy27.pdf", "page": 2, "quote": null }
+      ],
+      "cost": { "tokens_in": 96200, "tokens_out": 3100, "inr": 0.62, "cached": false, "model": "gemini-flash + gemini-pro" }
+    },
+    {
+      "key": "bull_bear", "status": "ok", "title": "Bull vs bear",
+      "takeaway": "Bull case rests on quality, bear case on concentration and slowing growth",
+      "data": {
+        "bull": [
+          { "point": "Margin discipline proven across a growth slowdown; ROCE above 30% with net cash", "cite": 0 },
+          { "point": "Europe re-accelerating (+21% YoY), so the H2 ramp is plausible", "cite": 3 }
+        ],
+        "bear": [
+          { "point": "Growth guidance missed once already; FY27 band needs ~25% H2 growth", "cite": 1 },
+          { "point": "Top-10 clients ≈ 70% of revenue in a cyclical end market", "cite": 0 }
+        ]
+      },
+      "citations": [
+        { "doc": "Annual Report FY26", "date": "2026-06-30", "url": "https://example.com/kpit-ar-fy26.pdf", "page": 42, "quote": null },
+        { "doc": "Q4 FY26 concall", "date": "2026-04-24", "url": "https://example.com/kpit-q4fy26.pdf", "page": 3, "quote": null },
+        { "doc": "Q1 FY27 concall", "date": "2026-07-23", "url": "https://example.com/kpit-q1fy27.pdf", "page": 8, "quote": null },
+        { "doc": "Q2 FY27 concall", "date": "2026-10-29", "url": "https://example.com/kpit-q2fy27.pdf", "page": 2, "quote": null }
+      ],
+      "cost": { "tokens_in": 6200, "tokens_out": 540, "inr": 0.09, "cached": false, "model": "gemini-pro" }
+    }
+  ],
+  "total_cost": { "tokens_in": 120800, "tokens_out": 4260, "inr": 0.82, "cached": false, "model": null }
+}

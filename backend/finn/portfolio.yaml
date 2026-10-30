@@ -1,0 +1,30 @@
+# Mock portfolio: 18 NSE names, one per sector, mixing large and mid caps.
+# Picked from live NSE filings (1-30 Oct 2026): every name has Q2 FY27 results or a
+# notable event (management change, rating action, M&A, order win, regulatory action)
+# inside the demo window. BANKBARODA is the deliberate odd one out: a bank P&L has no EBITDA.
+# weight = % of portfolio value (sums to 100).
+
+holdings:
+  - { symbol: LT,         sector: Infrastructure,      size: large, weight: 8 }
+  - { symbol: MARUTI,     sector: Autos,               size: large, weight: 7 }
+  - { symbol: SUNPHARMA,  sector: Pharma,              size: large, weight: 7 }
+  - { symbol: ASIANPAINT, sector: Paints,              size: large, weight: 6 }
+  - { symbol: BANKBARODA, sector: PSU Bank,            size: large, weight: 6 }
+  - { symbol: COALINDIA,  sector: Mining & Energy,     size: large, weight: 6 }
+  - { symbol: INDIGO,     sector: Aviation,            size: large, weight: 6 }
+  - { symbol: ADANIENT,   sector: Conglomerate,        size: large, weight: 5 }
+  - { symbol: DIXON,      sector: Electronics Mfg,     size: mid,   weight: 6 }
+  - { symbol: KPITTECH,   sector: Auto Software,       size: mid,   weight: 5 }
+  - { symbol: NAUKRI,     sector: Internet,            size: mid,   weight: 5 }
+  - { symbol: MAZDOCK,    sector: Defence,             size: mid,   weight: 5 }
+  - { symbol: APARINDS,   sector: Electricals,         size: mid,   weight: 5 }
+  - { symbol: SUZLON,     sector: Renewables,          size: mid,   weight: 4 }
+  - { symbol: DELHIVERY,  sector: Logistics,           size: mid,   weight: 4 }
+  - { symbol: RADICO,     sector: Alcobev,             size: mid,   weight: 4 }
+  - { symbol: NAVINFLUOR, sector: Specialty Chemicals, size: mid,   weight: 4 }
+  - { symbol: BRIGADE,    sector: Real Estate,         size: mid,   weight: 3 }
+
+# On-demand research demo set (pull side). Chosen because management gives explicit
+# numeric guidance on calls, which makes the promise ledger meaningful.
+# Two are outside the portfolio to show the engine generalises. Verify transcripts on screener in Phase 1.
+research_demo: [KPITTECH, DIXON, POLYCAB, PERSISTENT]

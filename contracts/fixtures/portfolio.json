@@ -1,0 +1,24 @@
+{
+  "_fixture": "Illustrative values for frontend development only. Six of the 18 holdings shown.",
+  "as_of": "2026-10-30",
+  "holdings": [
+    { "symbol": "DIXON", "name": "Dixon Technologies", "sector": "Electronics Mfg", "weight": 6, "close": 15120.5, "chg_pct": -6.1, "vol_ratio": 2.8,
+      "spark": [16010,16120,15980,16200,16340,16290,16180,16050,16220,16400,16380,16290,16110,16030,15990,16080,16150,16210,16190,16100,16040,15980,16020,16100,16140,16110,16090,16060,16100,15120.5],
+      "thesis_status": "challenged", "unseen": 2 },
+    { "symbol": "LT", "name": "Larsen & Toubro", "sector": "Infrastructure", "weight": 8, "close": 3712.0, "chg_pct": 0.6, "vol_ratio": 1.0,
+      "spark": [3580,3592,3601,3588,3610,3622,3630,3618,3640,3652,3648,3660,3671,3665,3680,3676,3690,3688,3695,3702,3698,3705,3690,3699,3701,3710,3706,3700,3690,3712],
+      "thesis_status": "intact", "unseen": 1 },
+    { "symbol": "SUZLON", "name": "Suzlon Energy", "sector": "Renewables", "weight": 4, "close": 61.4, "chg_pct": 2.3, "vol_ratio": 1.6,
+      "spark": [57.1,57.4,57.0,56.8,57.5,58.0,58.3,58.1,58.6,59.0,58.8,59.2,59.6,59.3,59.9,60.2,60.0,59.7,60.1,60.4,60.2,60.0,59.8,60.1,60.3,60.0,59.9,60.2,60.0,61.4],
+      "thesis_status": "intact", "unseen": 1 },
+    { "symbol": "NAUKRI", "name": "Info Edge (India)", "sector": "Internet", "weight": 5, "close": 1498.0, "chg_pct": 1.2, "vol_ratio": 1.4,
+      "spark": [1440,1452,1448,1460,1455,1462,1470,1466,1471,1480,1476,1472,1468,1475,1482,1479,1474,1470,1466,1472,1478,1481,1476,1472,1470,1476,1480,1482,1480,1498],
+      "thesis_status": "watch", "unseen": 1 },
+    { "symbol": "BANKBARODA", "name": "Bank of Baroda", "sector": "PSU Bank", "weight": 6, "close": 268.3, "chg_pct": -0.4, "vol_ratio": 1.2,
+      "spark": [262,263,261,264,265,266,265,267,268,267,269,270,268,269,271,270,269,268,270,271,270,269,268,269,270,271,270,269,269.4,268.3],
+      "thesis_status": "intact", "unseen": 0 },
+    { "symbol": "COALINDIA", "name": "Coal India", "sector": "Mining & Energy", "weight": 6, "close": 402.1, "chg_pct": -1.1, "vol_ratio": 0.9,
+      "spark": [410,409,411,412,410,408,409,407,406,408,409,410,411,409,408,407,406,405,406,407,408,406,405,404,405,406,405,404,406.6,402.1],
+      "thesis_status": "none", "unseen": 0 }
+  ]
+}

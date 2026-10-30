@@ -1,0 +1,12 @@
+{
+  "volume_multiple": 2.0,
+  "volume_lookback": 20,
+  "price_move_pct": 5.0,
+  "categories": {
+    "results": true, "M&A": true, "fund_raise": true, "management_change": true, "litigation": true,
+    "insider_trading": false, "earnings_call": false, "investor_meetings": false, "credit_rating": true,
+    "dividend": false, "bonus_split": true, "capex": true, "press_release": false, "postal_ballot": false,
+    "agm_egm": false, "pledging": true, "unclassified": false
+  },
+  "thesis_alerts": true
+}

@@ -1,0 +1,13 @@
+{
+  "_fixture": "Illustrative values for frontend development only.",
+  "items": [
+    { "id": "al-1", "ts": "2026-10-30T16:30:00+05:30", "symbol": "DIXON", "kind": "thesis",
+      "message": "Margin pillar challenged by Q2 results", "value": 3.4, "threshold": 3.8, "item_id": "nse-106836507", "seen": false },
+    { "id": "al-2", "ts": "2026-10-30T16:30:00+05:30", "symbol": "DIXON", "kind": "volume",
+      "message": "Volume 2.8× its 20-day average", "value": 2.8, "threshold": 2.0, "item_id": null, "seen": false },
+    { "id": "al-3", "ts": "2026-10-30T16:30:00+05:30", "symbol": "DIXON", "kind": "price",
+      "message": "Fell 6.1% in a day", "value": -6.1, "threshold": 5.0, "item_id": null, "seen": true },
+    { "id": "al-4", "ts": "2026-10-28T13:57:49+05:30", "symbol": "NAUKRI", "kind": "category",
+      "message": "Management change: MD & CEO transition", "value": null, "threshold": null, "item_id": "evt-naukri-mgmt-1028", "seen": true }
+  ]
+}

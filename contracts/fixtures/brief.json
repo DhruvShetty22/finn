@@ -1,0 +1,141 @@
+{
+  "_fixture": "Illustrative values for frontend development only. Subjects and URLs are real NSE filings; numbers, bios and verdicts are made up.",
+  "window": { "from": "2026-10-29T18:00:00+05:30", "to": "2026-10-30T18:00:00+05:30", "label": "Last 24 hours", "widened_from": null },
+  "summary": {
+    "theses_intact": 15, "theses_total": 18, "challenged": ["DIXON"],
+    "material": 7, "routine": 23,
+    "headline": "1 thesis challenged, 2 strengthened · 23 routine filings tucked away"
+  },
+  "top": [
+    {
+      "id": "nse-106836507", "symbol": "DIXON", "company": "Dixon Technologies (India) Limited", "ts": "2026-10-30T16:07:23+05:30",
+      "category": "results", "subject": "Outcome of Board Meeting",
+      "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/DIXON_30102026160723_Outcome.pdf",
+      "tier": "top", "score": 94,
+      "why": "Q2 results · challenges your margin pillar · stock −6.1% on 2.8× volume",
+      "headline": "Revenue grew 31% YoY but EBITDA margin slipped to 3.4%, below the 3.8–4% guided",
+      "thesis": { "pillar_id": "dixon-p2", "pillar": "EBITDA margin 3.8–4% in FY27", "verdict": "challenges", "reason": "Q2 margin 3.4%, the second consecutive quarter below the guided band" },
+      "card": {
+        "kind": "results", "period": "Q2 FY27", "basis": "consolidated", "is_financial": false,
+        "rows": [
+          { "metric": "Revenue", "cur": 14820, "prev_q": 13110, "prev_y": 11310, "qoq_pct": 13.0, "yoy_pct": 31.0 },
+          { "metric": "EBITDA",  "cur": 504,   "prev_q": 472,   "prev_y": 430,   "qoq_pct": 6.8,  "yoy_pct": 17.2 },
+          { "metric": "PBT",     "cur": 402,   "prev_q": 371,   "prev_y": 348,   "qoq_pct": 8.4,  "yoy_pct": 15.5 },
+          { "metric": "PAT",     "cur": 301,   "prev_q": 281,   "prev_y": 262,   "qoq_pct": 7.1,  "yoy_pct": 14.9 }
+        ],
+        "margin": { "label": "EBITDA margin", "cur": 3.4, "prev_q": 3.6, "prev_y": 3.8 },
+        "ebitda_formula": "PBT + finance cost + D&A − other income",
+        "check": "matched",
+        "verdict": "Growth intact, profitability lagging: margin down for a second quarter"
+      },
+      "market": { "chg_pct": -6.1, "vol_ratio": 2.8 },
+      "seen": false
+    },
+    {
+      "id": "evt-naukri-mgmt-1028", "symbol": "NAUKRI", "company": "Info Edge (India) Limited", "ts": "2026-10-28T13:57:49+05:30",
+      "category": "management_change", "subject": "Change in Management",
+      "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/NAUKRI2_28102026135727_IEIL_SE_Intimation_MD_and_CEO.pdf",
+      "tier": "top", "score": 88,
+      "why": "MD & CEO transition · grouped 4 related filings into one",
+      "headline": "Long-time MD & CEO moves to an executive vice-chair role; insider successor takes over in April",
+      "thesis": { "pillar_id": "naukri-p1", "pillar": "Recruitment billings growth 12–15%", "verdict": "neutral", "reason": "Planned succession with an internal candidate; no change to strategy signalled" },
+      "card": {
+        "kind": "person", "name": "Ananya Rao (fixture)", "role": "MD & CEO (incoming)", "change": "appointed", "effective": "2027-04-01",
+        "bio": "16 years at the company; ran the recruitment vertical since 2019 and led its move to subscription billing.",
+        "prior": [
+          { "org": "Info Edge: Recruitment", "role": "Business Head", "years": "2019–2026" },
+          { "org": "McKinsey & Company", "role": "Engagement Manager", "years": "2006–2010" }
+        ],
+        "source": "filing", "source_url": "https://nsearchives.nseindia.com/corporate/NAUKRI2_28102026135727_IEIL_SE_Intimation_MD_and_CEO.pdf",
+        "red_flag": null
+      },
+      "market": { "chg_pct": 1.2, "vol_ratio": 1.4 },
+      "seen": false
+    },
+    {
+      "id": "nse-106834835", "symbol": "DELHIVERY", "company": "Delhivery Limited", "ts": "2026-10-29T17:53:09+05:30",
+      "category": "litigation", "subject": "Action(s) taken or orders passed",
+      "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/DELHIVERYLTD_29102026175259_SEintimation_GSTPenaltyEcom_29102026.pdf",
+      "tier": "top", "score": 71,
+      "why": "GST penalty on a subsidiary · small relative to net worth",
+      "headline": "UP GST order on subsidiary Ecom Express: ₹14 Cr demand, about 0.2% of net worth; company plans to appeal",
+      "thesis": null,
+      "card": { "kind": "deal", "what": "GST penalty order", "counterparty": "UP State Tax Dept", "value_cr": 14.2, "pct_of_mcap": 0.04, "pct_of_revenue": 0.15 },
+      "market": { "chg_pct": 0.4, "vol_ratio": 0.9 },
+      "seen": false
+    }
+  ],
+  "worth_reading": [
+    {
+      "id": "nse-106831411", "symbol": "SUZLON", "company": "Suzlon Energy Limited", "ts": "2026-10-28T09:31:53+05:30",
+      "category": "credit_rating", "subject": "Credit Rating",
+      "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/SUZLON1_28102026093056_Suzlon28102026.pdf",
+      "tier": "read", "score": 62, "why": "Rating upgrade · supports your deleveraging pillar",
+      "headline": "Long-term rating upgraded one notch, outlook stable",
+      "thesis": { "pillar_id": "suzlon-p3", "pillar": "Net-cash balance sheet sustained", "verdict": "supports", "reason": "Agency cites net-cash position and order book visibility" },
+      "card": { "kind": "rating", "agency": "ICRA", "instrument": "Long-term bank facilities", "from": "A+", "to": "AA-", "outlook": "Stable", "direction": "upgrade" },
+      "market": { "chg_pct": 2.3, "vol_ratio": 1.6 }, "seen": false
+    },
+    {
+      "id": "nse-106836341", "symbol": "APARINDS", "company": "Apar Industries Limited", "ts": "2026-10-30T14:52:29+05:30",
+      "category": "M&A", "subject": "Acquisition",
+      "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/APARINDS_30102026145125_Chinaintimation.pdf",
+      "tier": "read", "score": 55, "why": "Overseas acquisition via subsidiary · under 1% of market cap",
+      "headline": "Wholly owned subsidiary buys a small specialty-oils unit; immaterial in size",
+      "thesis": null,
+      "card": { "kind": "deal", "what": "Acquisition by WOS", "counterparty": "Undisclosed", "value_cr": 85, "pct_of_mcap": 0.2, "pct_of_revenue": 0.4 },
+      "market": { "chg_pct": -0.8, "vol_ratio": 1.1 }, "seen": false
+    },
+    {
+      "id": "nse-106829683", "symbol": "LT", "company": "Larsen & Toubro Limited", "ts": "2026-10-27T10:16:48+05:30",
+      "category": "press_release", "subject": "Bagging/Receiving of orders/contracts",
+      "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/PAM_27102026101631_PressRelease27102026.pdf",
+      "tier": "read", "score": 58, "why": "Order win · supports order-inflow pillar",
+      "headline": "‘Significant’ order (₹1,000–2,500 Cr band) in power transmission, Middle East",
+      "thesis": { "pillar_id": "lt-p1", "pillar": "Order inflow growth 10%+ in FY27", "verdict": "supports", "reason": "Adds to H1 inflows already tracking ahead of guidance" },
+      "card": null,
+      "market": { "chg_pct": 0.6, "vol_ratio": 1.0 }, "seen": false
+    },
+    {
+      "id": "nse-106836401", "symbol": "SUNPHARMA", "company": "Sun Pharmaceutical Industries Limited", "ts": "2026-10-30T15:18:46+05:30",
+      "category": "unclassified", "subject": "General Updates",
+      "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/SUNSEC_30102026151827_BMOutcome30102026_Conclusion.pdf",
+      "tier": "read", "score": 30, "why": "Auditor change, but mandatory rotation, not a resignation",
+      "headline": "New statutory auditor appointed under mandatory rotation; no red flag",
+      "thesis": null, "card": null, "market": null, "seen": false
+    }
+  ],
+  "routine": {
+    "count": 23,
+    "by_category": { "dividend": 4, "earnings_call": 7, "investor_meetings": 6, "unclassified": 6 },
+    "items": [
+      {
+        "id": "nse-106834930", "symbol": "COALINDIA", "company": "Coal India Limited", "ts": "2026-10-29T18:18:07+05:30",
+        "category": "dividend", "subject": "Record Date", "source": "NSE", "pdf_url": "https://nsearchives.nseindia.com/corporate/COALINDIA_29102026181749_Dividend.pdf",
+        "tier": "routine", "score": 18, "why": "Dividend record date", "headline": "2nd interim dividend: record date 4 Nov",
+        "thesis": null, "card": { "kind": "chip", "label": "Record date", "value": "₹5.50 / share", "date": "2026-11-04" },
+        "market": null, "seen": false
+      },
+      {
+        "id": "nse-106836372", "symbol": "NAVINFLUOR", "company": "Navin Fluorine International Limited", "ts": "2026-10-30T15:02:24+05:30",
+        "category": "dividend", "subject": "Record Date", "source": "NSE", "pdf_url": null,
+        "tier": "routine", "score": 15, "why": "Interim dividend", "headline": "Interim dividend declared",
+        "thesis": null, "card": { "kind": "chip", "label": "Interim dividend", "value": "₹7 / share", "date": "2026-11-07" },
+        "market": null, "seen": false
+      },
+      {
+        "id": "nse-106836645", "symbol": "DELHIVERY", "company": "Delhivery Limited", "ts": "2026-10-30T16:43:54+05:30",
+        "category": "earnings_call", "subject": "Investor Presentation", "source": "NSE", "pdf_url": null,
+        "tier": "routine", "score": 22, "why": "Earnings deck; the numbers are already in the results card", "headline": "Q2 investor presentation",
+        "thesis": null, "card": null, "market": null, "seen": false
+      },
+      {
+        "id": "nse-106836782", "symbol": "BANKBARODA", "company": "Bank Of Baroda", "ts": "2026-10-30T17:17:14+05:30",
+        "category": "agm_egm", "subject": "General Updates", "source": "NSE", "pdf_url": null,
+        "tier": "routine", "score": 10, "why": "EGM notice: shareholder director election", "headline": "EGM to elect shareholder director",
+        "thesis": null, "card": null, "market": null, "seen": false
+      }
+    ]
+  },
+  "alerts_unseen": 2
+}

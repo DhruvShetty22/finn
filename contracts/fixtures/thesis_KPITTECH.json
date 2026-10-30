@@ -1,0 +1,35 @@
+{
+  "_fixture": "Illustrative values for frontend development only. Quotes are invented.",
+  "symbol": "KPITTECH",
+  "status": "watch",
+  "drafted_from": [
+    { "doc": "Q1 FY27 concall", "date": "2026-07-23", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/example-q1.pdf" },
+    { "doc": "Q4 FY26 concall", "date": "2026-04-24", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/example-q4.pdf" }
+  ],
+  "user_edited": false,
+  "pillars": [
+    {
+      "id": "kpit-p1", "text": "CC revenue growth of 18–22% in FY27", "metric": "revenue_growth", "target": "18–22%", "period": "FY27",
+      "source": { "doc": "Q4 FY26 concall", "date": "2026-04-24", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/example-q4.pdf", "page": 3,
+                  "quote": "For FY27 we are guiding for constant currency revenue growth in the range of 18 to 22 percent." },
+      "status": "at_risk",
+      "evidence": [
+        { "ts": "2026-10-28T12:52:46+05:30", "item_id": "nse-kpit-q2", "verdict": "challenges", "note": "H1 growth 14.8% YoY CC; H2 needs ~25% to reach the bottom of the band" },
+        { "ts": "2026-07-23T14:00:00+05:30", "item_id": null, "verdict": "supports", "note": "Q1 growth 16.1%, slightly below the band but early in the year" }
+      ]
+    },
+    {
+      "id": "kpit-p2", "text": "EBITDA margin at or above 21%", "metric": "ebitda_margin", "target": "≥21%", "period": "FY27",
+      "source": { "doc": "Q1 FY27 concall", "date": "2026-07-23", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/example-q1.pdf", "page": 5,
+                  "quote": "We remain confident of sustaining EBITDA margins of 21 percent plus." },
+      "status": "on_track",
+      "evidence": [ { "ts": "2026-10-28T12:52:46+05:30", "item_id": "nse-kpit-q2", "verdict": "supports", "note": "Q2 EBITDA margin 21.4%" } ]
+    },
+    {
+      "id": "kpit-p3", "text": "Large-deal TCV of $1bn+ through the year", "metric": "order_book", "target": "$1bn+", "period": "FY27",
+      "source": { "doc": "Q1 FY27 concall", "date": "2026-07-23", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/example-q1.pdf", "page": 7,
+                  "quote": "We expect the engagement TCV to cross a billion dollars this year." },
+      "status": "untested", "evidence": []
+    }
+  ]
+}

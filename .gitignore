@@ -1,0 +1,20 @@
+# challenge briefs (not ours to publish)
+*.pdf
+# secrets
+.env
+.env.*
+!.env.example
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+# node
+node_modules/
+.next/
+out/
+# local data / caches
+data/
+*.db
+*.sqlite*
