@@ -174,15 +174,15 @@ The principle is **numbers from code, words from documents, nothing from model m
 ### Phase 4: Frontend (≈7–9h total) · *Session 5 Sat evening + Session 6 Sun morning*
 **Can start in parallel right after Phase 0**, built against `contracts/fixtures` (served at `/fixtures/*.json` through a symlink), then switched to the live API.
 ⚠ The scaffold is **Next.js 16.4 / React 19.3 / Tailwind 4**, and its `frontend/AGENTS.md` warns of breaking API changes. **Read `frontend/node_modules/next/dist/docs/` before writing code**; don't assume older Next conventions.
-- [ ] **4a. Design system (≈1h):** type scale, a dense card layout, a single accent colour, semantic red and green used sparingly, dark mode first, number formatting (₹ Cr, %, ▲▼).
-- [ ] **4b. Brief screen:** thesis health header ("15/18 intact"), window picker, Top cards with thesis verdict badges, "Worth reading", collapsed Routine, results card, person card, one-liner cards, swipe triage, "Dig in →".
-- [ ] **4b′. Thesis view per holding:** pillars with status, the source quote, and an evidence timeline, which links to the promise ledger. Pillars can be edited inline.
-- [ ] **4c. Alerts:** inbox with badge, and a rule editor with sliders for k× volume and ±X%, plus category toggles.
-- [ ] **4d. Research deck:** swipeable sections, a promise-ledger timeline (the showpiece visual), small sparklines for trajectory, citation chips that open the source PDF page, a progressive loading skeleton while sections stream, and a cost footer.
-- [ ] **4e. Ask bar:** ticker autocomplete over the NSE list, a free-text question (stretch: answered over cached document chunks with BM25, no embeddings cost), and a mic button using the Web Speech API.
-- [ ] **4f. Portfolio view (minimal):** holdings with daily move and volume ratio, each tapping into its research deck.
-- [ ] Empty and error states, e.g. "Quiet 24h — showing last 7 days instead". **Evaluators may open the app on a weekend.**
-- [ ] PWA manifest, icons, and test on a real phone (iOS Safari and Android Chrome).
+- [x] **4a. Design system (≈1h):** type scale, a dense card layout, a single accent colour, semantic red and green used sparingly, dark mode first, number formatting (₹ Cr, %, ▲▼).
+- [x] **4b. Brief screen:** thesis health header ("15/18 intact"), window picker, Top cards with thesis verdict badges, "Worth reading", collapsed Routine, results card, person card, one-liner cards, swipe triage, "Dig in →".
+- [x] **4b′. Thesis view per holding:** pillars with status, the source quote, and an evidence timeline, which links to the promise ledger. Pillars can be edited inline.
+- [x] **4c. Alerts:** inbox with badge, and a rule editor with sliders for k× volume and ±X%, plus category toggles.
+- [x] **4d. Research deck:** swipeable sections, a promise-ledger timeline (the showpiece visual), small sparklines for trajectory, citation chips that open the source PDF page, a progressive loading skeleton while sections stream, and a cost footer.
+- [x] **4e. Ask bar:** ticker autocomplete over the NSE list, a free-text question (stretch: answered over cached document chunks with BM25, no embeddings cost), and a mic button using the Web Speech API. *(Autocomplete, recents and mic are done; the free-text Q&A stretch is not.)*
+- [x] **4f. Portfolio view (minimal):** holdings with daily move and volume ratio, each tapping into its research deck.
+- [x] Empty and error states, e.g. "Quiet 24h — showing last 7 days instead". **Evaluators may open the app on a weekend.**
+- [ ] PWA manifest, icons, and test on a real phone (iOS Safari and Android Chrome). *(Manifest and icons are done; the real-phone test is still open.)*
 - **Done when:** the full Brief → Dig in → Research → Ask loop works on a phone against the live API.
 
 ### Phase 5: Deploy & harden (≈2–3h) · *Session 7, Sun early afternoon*
@@ -238,3 +238,4 @@ The principle is **numbers from code, words from documents, nothing from model m
 |---|---|---|---|---|
 | 0 | Fri 30 Oct | Planning | Read both briefs, wrote this plan | Phase 0 |
 | 1 | Fri 30 Oct | Phase 0 | Decisions D1–D5; probed the NSE API (bulk works); portfolio and research set; repo scaffold; contracts + fixtures | Gemini key, GitHub remote, then Phase 1 |
+| 2 | Fri 30 Oct | Phase 4 (parallel: frontend) | Ran alongside session 1 by agreement: frontend/ here, backend/ and remote there. Built all screens against fixtures: design tokens (dark first, one violet accent, validated chart palette), Brief (thesis-health strip, window picker, swipe triage with undo, results/person/deal/rating/chip cards, folded Routine), Thesis (pillars, quotes, evidence timeline, inline edit), Research deck (SSE with per-section skeletons, the promise-ledger timeline, charts, citation chips, cost footer), Ask (autocomplete, recents, mic), Alerts (inbox with threshold gauges, rule editor), Holdings, PWA manifest and icons. tsc, eslint and `next build` are clean | Switch to the live API once /api/brief and /api/portfolio are up; real-phone pass; swipe and PWA install test |
