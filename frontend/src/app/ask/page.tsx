@@ -131,7 +131,8 @@ export default function AskPage() {
         <div className="mt-6 space-y-6">
           {recent.length > 0 && <Chips title="Recent" items={recent} />}
           {portfolio && <Chips title="Your holdings" items={portfolio.holdings.map((h) => h.symbol)} />}
-          <Chips title="Outside your portfolio" items={["POLYCAB", "PERSISTENT", "KPITTECH"]} />
+          <Chips title="Outside your portfolio"
+            items={["POLYCAB", "PERSISTENT", "TMPV", "KPITTECH"].filter((s) => !portfolio?.holdings.some((h) => h.symbol === s))} />
           <div className="rounded-2xl border border-line bg-surface p-4">
             <div className="text-small font-medium">What you get</div>
             <ul className="mt-2 space-y-1.5 text-small text-ink-2">
