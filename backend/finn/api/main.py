@@ -6,13 +6,17 @@
 import os
 from datetime import timedelta
 
-from fastapi import FastAPI, Query
+from datetime import datetime
+
+from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import func, select
 
 from finn import market
 from finn.config import IST, now
-from finn.db import Announcement, Company, Price, init_db, session
+from finn.db import Alert, Announcement, Company, ItemState, Price, init_db, session
+from finn.push import digest
+from finn.push import rules as user_rules
 
 app = FastAPI(title="FINN")
 app.add_middleware(
@@ -85,3 +89,43 @@ def search(q: str = Query(..., min_length=1), limit: int = Query(8, le=25)) -> d
         ).limit(200)).all()
     rank = lambda c: (c.symbol != q.upper(), not c.symbol.startswith(q.upper()), not c.in_portfolio, len(c.symbol))
     return {"results": [{"symbol": c.symbol, "name": short_name(c.name)} for c in sorted(rows, key=rank)[:limit]]}
+
+
+def _dt(v: str | None) -> datetime | None:
+    if not v:
+        return None
+    d = datetime.fromisoformat(v.replace("Z", "+00:00"))
+    return d if d.tzinfo else d.replace(tzinfo=IST)
+
+
+@app.get("/api/brief")
+def brief(from_: str | None = Query(None, alias="from"), to: str | None = None) -> dict:
+    with session() as s:
+        return digest.build(s, _dt(from_), _dt(to))
+
+
+@app.post("/api/items/{item_id}/{action}")
+def triage(item_id: str, action: str) -> dict:
+    if action not in ("seen", "keep"):
+        raise HTTPException(404)
+    with session() as s:
+        st = s.get(ItemState, item_id) or ItemState(id=item_id)
+        if action == "seen":
+            st.seen = True
+        else:
+            st.kept = True
+        s.add(st)
+        s.commit()
+    return {"ok": True}
+
+
+@app.get("/api/rules")
+def get_rules() -> dict:
+    with session() as s:
+        return user_rules.get(s)
+
+
+@app.put("/api/rules")
+def put_rules(body: dict = Body(...)) -> dict:
+    with session() as s:
+        return user_rules.put(s, body)

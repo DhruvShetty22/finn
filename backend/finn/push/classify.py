@@ -101,13 +101,18 @@ SUBJECT = {
 
 # Generic subjects: first matching rule on the description wins. Order matters.
 RULES: list[tuple[str, str, str]] = [
+    # specific satellites first, so the broad "financial results" rule doesn't swallow them
     (r"newspaper|news ?paper|publication of (the )?(un)?audited", "results", "ancillary"),
     (r"transcript|audio recording|recording of|earnings call|conference call|con\.? ?call", "earnings_call", "primary"),
-    (r"financial results?|results for the (quarter|period|half|year)|(un)?audited (standalone|consolidated|financial)|(quarter|half.?year|year) ended (march|june|september|december)", "results", "primary"),
     (r"investor(s)? presentation|corporate (investors? )?pre[r]?sentation|earnings presentation", "results", "ancillary"),
     (r"clarification (regarding|on) media|media report|news item", "press_release", "ancillary"),
     (r"\bMCLR\b|lending rate|\bBRLLR\b|base rate|outstanding bond", "unclassified", "primary"),
     (r"provisional (business|production)|business figures|production and off.?take|monthly (business|sales)|company update for the quarter", "press_release", "primary"),
+    (r"tax deduct|\bTDS\b|tax on (the )?(\w+ )?(interim |final )?dividend|communication.{0,40}dividend", "dividend", "ancillary"),
+    (r"resign\w*.{0,40}statutory auditor|statutory auditor.{0,40}resign", "management_change", "primary"),
+    (r"statutory auditor|auditor rotation|secretarial auditor|cost auditor|internal auditor", "unclassified", "primary"),
+    # the news itself
+    (r"financial results?|results for the (quarter|period|half|year)|(un)?audited (standalone|consolidated|financial)|(quarter|half.?year|year) ended (march|june|september|december)", "results", "primary"),
     (r"pledg|encumbr", "pledging", "primary"),
     (r"regulation 7\(2\)|\bPIT\b|insider trading|prohibition of insider|regulation 29|regulation 31", "insider_trading", "primary"),
     (r"postal ballot", "postal_ballot", "primary"),
@@ -122,8 +127,8 @@ RULES: list[tuple[str, str, str]] = [
     (r"penalty|show cause|demand order|tribunal|\bNCLT\b|court|litigation|\bGST\b|income tax|enforcement|regulatory action|adjudicat", "litigation", "primary"),
     (r"capacity|new plant|commission|capex|capital expenditure|commercial production|greenfield|brownfield", "capex", "primary"),
     (r"order|contract|launch|partnership|\bMoU\b|agreement|collaborat|approval|licen[cs]e|business update|sales (volume|number)|production (volume|number)", "press_release", "primary"),
-    (r"ESOP|ESOS|employee stock|trading window|compliance certificate|regulation 74|loss of share|duplicate|ESG|BRSR|sustainability report|secretarial|statutory auditor|change in auditor", "unclassified", "primary"),
-    (r"reconstitution of (the )?committee|committee(s)? of the board|intimation of (closure|loss)|certificate under|regulation 74", "unclassified", "primary"),
+    (r"ESOP|ESOS|employee stock|trading window|compliance certificate|regulation 74|loss of share|duplicate|ESG|BRSR|sustainability report|secretarial|change in auditor", "unclassified", "primary"),
+    (r"reconstitution of (the )?committee|committee(s)? of the board|intimation of (closure|loss)|certificate under", "unclassified", "primary"),
 ]
 _RULES = [(re.compile(p, re.I), c, r) for p, c, r in RULES]
 
@@ -162,3 +167,65 @@ def classify(subject: str, text: str) -> tuple[str | None, str]:
     if subject in ("Outcome of Board Meeting",):
         return None, "primary"  # board outcome we couldn't read: let the LLM look
     return None, "primary"
+
+
+# --- applying it -----------------------------------------------------------------------------------
+
+LLM_BATCH = 25
+
+
+def run(s, redo_rules: bool = False) -> dict:
+    """Classify every unclassified filing: rules first, then one cheap LLM call per batch of leftovers.
+    redo_rules re-applies the (free) rules to rule-labelled rows after the rules change; LLM labels are kept."""
+    from pydantic import BaseModel
+    from sqlmodel import select
+
+    from finn.db import Announcement
+    from finn.llm.router import LLMError, ask
+
+    q = Announcement.cls_source == None  # noqa: E711
+    if redo_rules:
+        q = q | (Announcement.cls_source == "rule")
+    pending = s.exec(select(Announcement).where(q)).all()
+    leftovers = []
+    for a in pending:
+        cat, role = classify(a.subject, a.text)
+        a.role = role
+        if cat:
+            a.category, a.cls_source = cat, "rule"
+        else:
+            leftovers.append(a)
+        s.add(a)
+    s.commit()
+
+    class Label(BaseModel):
+        id: str
+        category: str
+        ancillary: bool
+
+    for i in range(0, len(leftovers), LLM_BATCH):
+        batch = leftovers[i:i + LLM_BATCH]
+        lines = "\n".join(f'{a.id} | {a.subject} | {a.text[:300]}' for a in batch)
+        try:
+            labels = ask("classify", "cheap", PROMPT.format(categories=", ".join(CATEGORIES), lines=lines), schema=list[Label])
+        except LLMError:
+            continue  # stays unclassified (cls_source None) and is retried on the next run
+        got = {l["id"]: l for l in labels if l.get("category") in CATEGORIES}
+        for a in batch:
+            if l := got.get(a.id):
+                a.category, a.cls_source = l["category"], "llm"
+                a.role = "ancillary" if l["ancillary"] else "primary"
+                s.add(a)
+        s.commit()
+    return {"rules": len(pending) - len(leftovers), "llm": len(leftovers)}
+
+
+PROMPT = """You classify Indian stock-exchange filings. For each line (id | exchange subject | description) pick exactly one category from:
+{categories}
+
+Guidance: results = quarterly/annual results and their press releases, decks, ads. press_release = order wins, launches,
+partnerships, business/production updates, clarifications on news. unclassified = routine paperwork that would not move the stock.
+Set ancillary=true when the filing only accompanies or repeats news filed elsewhere (a results press release or deck, a
+newspaper ad, a revised copy); false when the filing itself is the news.
+
+{lines}"""
