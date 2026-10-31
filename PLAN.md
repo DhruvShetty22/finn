@@ -6,6 +6,22 @@
 
 ---
 
+## ⏱ Crunch scope (decided Sat 31 Oct, 19:10 IST): this overrides the phase lists below
+About one working day is left, so we build only what the brief weights most. Everything else is cut.
+
+| # | Deliverable | Why it's in (brief's words) |
+|---|---|---|
+| M1 | Results card: Revenue/EBITDA/PBT/PAT, QoQ/YoY, from the filing | "two examples we love" |
+| M2 | Management-change person card, bio taken from the filing | "two examples we love" |
+| M3 | Threshold alerts (price ±X%, volume k×, categories) + `/api/alerts` | "Triggered alerts… I decide what unusual means" |
+| M4 | `/api/research/{any NSE symbol}`: deterministic sections + **promise ledger** | "numbers vs narrative… what we value most"; "must generalise" |
+| M5 | Thesis-lite: pillars = latest guidance from M4's extraction; numeric checks vs results in code | our interaction point of view (Thesis Guardian) |
+| M6 | Deployed link + cron | "a demo that doesn't run is the worst outcome" |
+| M7 | README (architecture, routing, cost) + writeup + build history + email | submission |
+
+**Cut:** LLM one-liners for other categories (a ranked, cleaned headline is enough), business snapshot, bull/bear, web-search bios, voice, real phone push, BSE fallback, AR deep notes.
+Research sections that are cut return `status: "empty"`.
+
 ## 0. What's being graded (read this first)
 
 | They said | What it means for us |
@@ -130,9 +146,9 @@ Plumbing only: get it working and don't gold-plate it.
 - **Done when:** `python -m finn.jobs.run_eod` and `run_filings` populate the DB, `screener.py SYMBOL` returns tables and document links for an arbitrary ticker, and the skeleton is live on a phone.
 
 ### Phase 2: Push engine (≈4–5h) · *Session 3, Sat morning*
-- [ ] **Event grouping:** merge filings that share a symbol, have similar text and fall within about 2h, or share a PDF stem, into one event. The card shows "grouped 4 filings".
-- [ ] **Classifier, rules first:** map the NSE/BSE subject and category strings to the 17 reference categories with a lookup table and regexes, at zero cost. Send only the leftovers ("General Updates", "Press Release" etc.) to the `cheap` model in **batches**. Hand-label about 40 announcements and report accuracy in the README.
-- [ ] **Priority score (explainable):** `base(category) × user_care(category) + modifiers`. Modifiers:
+- [x] **Event grouping:** merge filings that share a symbol, have similar text and fall within about 2h, or share a PDF stem, into one event. The card shows "grouped 4 filings".
+- [x] **Classifier, rules first:** map the NSE/BSE subject and category strings to the 17 reference categories with a lookup table and regexes, at zero cost. Send only the leftovers ("General Updates", "Press Release" etc.) to the `cheap` model in **batches**. Hand-label about 40 announcements and report accuracy in the README.
+- [x] **Priority score (explainable):** `base(category) × user_care(category) + modifiers`. Modifiers:
   - a same-day abnormal price or volume move
   - the position's weight in the portfolio
   - **materiality ratio** (order/deal/fine size as a % of TTM revenue or net worth)
