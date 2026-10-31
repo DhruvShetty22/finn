@@ -1,0 +1,12 @@
+# The free backend sleeps after 15 idle minutes; a cold start would greet a reviewer with a 30-60s spinner.
+# Ping it every 10 minutes. Set the repo variable FINN_API_URL (e.g. https://finn-api.onrender.com).
+name: keepalive
+on:
+  schedule: [{ cron: "*/10 * * * *" }]
+  workflow_dispatch:
+jobs:
+  ping:
+    if: vars.FINN_API_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 90 "${{ vars.FINN_API_URL }}/api/health" || true

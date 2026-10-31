@@ -19,6 +19,9 @@ About one working day is left, so we build only what the brief weights most. Eve
 | M6 | Deployed link + cron | "a demo that doesn't run is the worst outcome" |
 | M7 | README (architecture, routing, cost) + writeup + build history + email | submission |
 
+**Status, Sat 31 Oct ~20:30:** M1 ✅ (18/18 cards, 14 match screener exactly, mismatches flagged ⚠) · M2 ✅ (person cards from filing profiles) · M3 ✅ · M4 ✅ (22 decks prewarmed; TRENT shows the no-transcript path) · M5 ✅ (theses for 17 holdings, edit via PUT) · M6 ⏳ waiting on Neon/Render/Vercel accounts; `copy-db`, `ingest.yml` and `keepalive.yml` are ready · M7 ⏳ Sunday.
+Gemini: the free daily quota for the Flash models ran out on Sat evening (it resets about 13:30 IST). The router's daily-quota breaker moves everything to Flash-Lite, and quality held up.
+
 **Cut:** LLM one-liners for other categories (a ranked, cleaned headline is enough), business snapshot, bull/bear, web-search bios, voice, real phone push, BSE fallback, AR deep notes.
 Research sections that are cut return `status: "empty"`.
 

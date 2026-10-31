@@ -5,6 +5,7 @@
     uv run python -m finn.jobs filings [--days N]  # fetch → classify → enrich cards
     uv run python -m finn.jobs enrich [--days N] [--retry]
     uv run python -m finn.jobs fundamentals SYMBOL [SYMBOL ...]
+    uv run python -m finn.jobs copy-db URL     # copy this DB (incl. LLM cache) into another, e.g. production Postgres
     uv run python -m finn.jobs prewarm         # retry missing cards, build research decks (→ theses) for demo set + holdings
 """
 
@@ -40,6 +41,29 @@ def fundamentals(s, symbols: list[str]) -> None:
             log.error("fundamentals %s failed: %s", sym, e)
 
 
+def copy_db(url: str) -> None:
+    """Replace the target DB's tables with this DB's rows. Production starts with every card, deck and cached
+    model answer already built, so going live costs zero model calls."""
+    from sqlalchemy import create_engine
+    from sqlmodel import SQLModel
+
+    from finn.config import _db_url
+    from finn.db import engine as src
+
+    import os
+    os.environ["DATABASE_URL"] = url
+    dst = create_engine(_db_url(), pool_pre_ping=True)
+    SQLModel.metadata.create_all(dst)
+    with src.connect() as r, dst.begin() as w:
+        for table in reversed(SQLModel.metadata.sorted_tables):
+            w.execute(table.delete())
+        for table in SQLModel.metadata.sorted_tables:
+            rows = [dict(row._mapping) for row in r.execute(table.select())]
+            for i in range(0, len(rows), 500):
+                w.execute(table.insert(), rows[i:i + 500])
+            log.info("copied %s: %d rows", table.name, len(rows))
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     p = argparse.ArgumentParser(prog="finn.jobs")
@@ -51,11 +75,16 @@ def main() -> None:
     en = sub.add_parser("enrich")
     en.add_argument("--days", type=int, default=7)
     en.add_argument("--retry", action="store_true", help="retry events whose card failed before")
-    sub.add_parser("prewarm")
+    cp = sub.add_parser("copy-db")
+    cp.add_argument("url")
+    pw = sub.add_parser("prewarm")
+    pw.add_argument("--refresh", action="store_true", help="rebuild decks even if cached (extraction calls stay cached)")
     fu = sub.add_parser("fundamentals")
     fu.add_argument("symbols", nargs="*")
     a = p.parse_args()
 
+    if a.cmd == "copy-db":
+        return copy_db(a.url)
     init_db()
     syms = config.portfolio_symbols()
     with session() as s:
@@ -78,7 +107,7 @@ def main() -> None:
             log.info("enrich: %s", enrich.run(s, days=7, retry_failed=True))
             for sym in dict.fromkeys(config.portfolio()["research_demo"] + syms):
                 try:
-                    d = research.deck(s, sym)
+                    d = research.deck(s, sym, refresh=a.refresh)
                     led = next(x for x in d["sections"] if x["key"] == "ledger")
                     log.info("deck %s: ledger %s %s, %s", sym, led["status"], led["data"].get("score"), d["total_cost"])
                 except LookupError as e:
