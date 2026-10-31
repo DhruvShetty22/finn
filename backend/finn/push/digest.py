@@ -11,6 +11,7 @@ from finn.db import Announcement, Company, Enrichment, ItemState
 from finn.push import alerts
 from finn.push import rules as user_rules
 from finn.push.events import ANCILLARY_WINDOW, group
+from finn.pull import thesis as theses
 from finn.push.score import Scored, promote_primary, score
 
 WIDEN = [(timedelta(hours=24), "Last 24 hours"), (timedelta(days=3), "Last 3 days"), (timedelta(days=7), "Last 7 days")]
@@ -65,7 +66,7 @@ def build(s: Session, start: datetime | None = None, end: datetime | None = None
     return {
         "window": {"from": start.astimezone(IST).isoformat(), "to": end.astimezone(IST).isoformat(),
                    "label": label(start, end), "widened_from": widened_from},
-        "summary": {"theses_intact": 0, "theses_total": 0, "challenged": [], "material": material,
+        "summary": {**_thesis_summary(ctx, top + read), "material": material,
                     "routine": len(routine), "headline": _summary_line(top + read, len(routine))},
         "top": items(top), "worth_reading": items(read),
         "routine": {"count": len(routine), "by_category": by_cat, "items": items(routine)},
@@ -76,7 +77,7 @@ def build(s: Session, start: datetime | None = None, end: datetime | None = None
 def _context(s: Session) -> dict:
     companies = {c.symbol: c for c in s.exec(select(Company).where(Company.in_portfolio))}
     series = {sym: market.days(market.history(s, sym, 90)) for sym in companies}
-    return {"companies": companies, "series": series,
+    return {"companies": companies, "series": series, "theses": theses.load(s, list(companies)),
             "enrich": {}, "state": {st.id: st for st in s.exec(select(ItemState))}}
 
 
@@ -98,7 +99,11 @@ def _scored(s: Session, start: datetime, end: datetime, r: dict, ctx: dict) -> l
         react = market.reaction_day(e.primary.ts, ctx["series"].get(e.primary.symbol, []))
         if react and e.category != "results" and (e.primary.symbol, react.date) in results_days:
             react = None
-        out.append(score(e, rules=r, weight=c.weight if c else None, reaction=react, facts=enr.facts if enr else None))
+        imp = theses.impact(ctx["theses"].get(e.primary.symbol), enr.card if enr else None)
+        sc = score(e, rules=r, weight=c.weight if c else None, reaction=react, facts=enr.facts if enr else None,
+                   thesis_verdict=imp["verdict"] if imp else None)
+        sc.thesis = imp
+        out.append(sc)
     return out
 
 
@@ -115,10 +120,18 @@ def _item(x: Scored, ctx: dict) -> dict:
         "category": x.event.category, "subject": a.subject, "source": a.source, "pdf_url": a.pdf_url,
         "tier": x.tier, "score": x.score, "why": " · ".join(x.why),
         "headline": (enr.headline if enr and enr.headline else headline(a)),
-        "thesis": None, "card": card,
+        "thesis": getattr(x, "thesis", None), "card": card,
         "market": {"chg_pct": react.chg_pct, "vol_ratio": react.vol_ratio} if react and react.chg_pct is not None else None,
         "seen": bool(st and st.seen),
     }
+
+
+def _thesis_summary(ctx: dict, material: list[Scored]) -> dict:
+    ts = ctx["theses"]
+    hit = {x.event.primary.symbol for x in material if getattr(x, "thesis", None) and x.thesis["verdict"] == "challenges"}
+    challenged = sorted({sym for sym, t in ts.items() if t["status"] == "challenged"} | hit)
+    return {"theses_intact": sum(1 for sym, t in ts.items() if t["status"] == "intact" and sym not in hit),
+            "theses_total": len(ts), "challenged": challenged}
 
 
 def _summary_line(material: list[Scored], routine: int) -> str:

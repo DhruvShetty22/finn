@@ -134,7 +134,18 @@ class LLMCache(SQLModel, table=True):
     created_at: datetime
 
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+class ResearchCache(SQLModel, table=True):
+    """A finished research deck per symbol; served instantly (and free) until the inputs change."""
+
+    symbol: str = Field(primary_key=True)
+    updated_at: datetime
+    inputs: str  # fingerprint of the screener quarter + transcript URLs it was built from
+    deck: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+# research runs transcript extractions in threads; SQLite needs to allow that and wait out short write locks
+_sqlite = {"check_same_thread": False, "timeout": 30} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=_sqlite)
 
 
 def init_db() -> None:

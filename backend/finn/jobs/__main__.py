@@ -5,6 +5,7 @@
     uv run python -m finn.jobs filings [--days N]  # fetch → classify → enrich cards
     uv run python -m finn.jobs enrich [--days N] [--retry]
     uv run python -m finn.jobs fundamentals SYMBOL [SYMBOL ...]
+    uv run python -m finn.jobs prewarm         # retry missing cards, build research decks (→ theses) for demo set + holdings
 """
 
 import argparse
@@ -13,6 +14,7 @@ import logging
 from finn import config
 from finn.db import Company, init_db, session
 from finn.ingest import nse, prices, screener
+from finn.pull import research
 from finn.push import classify, enrich
 
 log = logging.getLogger("finn.jobs")
@@ -49,6 +51,7 @@ def main() -> None:
     en = sub.add_parser("enrich")
     en.add_argument("--days", type=int, default=7)
     en.add_argument("--retry", action="store_true", help="retry events whose card failed before")
+    sub.add_parser("prewarm")
     fu = sub.add_parser("fundamentals")
     fu.add_argument("symbols", nargs="*")
     a = p.parse_args()
@@ -71,6 +74,15 @@ def main() -> None:
         elif a.cmd == "enrich":
             log.info("classify: %s", classify.run(s))
             log.info("enrich: %s", enrich.run(s, days=a.days, retry_failed=a.retry))
+        elif a.cmd == "prewarm":
+            log.info("enrich: %s", enrich.run(s, days=7, retry_failed=True))
+            for sym in dict.fromkeys(config.portfolio()["research_demo"] + syms):
+                try:
+                    d = research.deck(s, sym)
+                    led = next(x for x in d["sections"] if x["key"] == "ledger")
+                    log.info("deck %s: ledger %s %s, %s", sym, led["status"], led["data"].get("score"), d["total_cost"])
+                except LookupError as e:
+                    log.error("deck %s: %s", sym, e)
         elif a.cmd == "fundamentals":
             fundamentals(s, a.symbols or syms)
 

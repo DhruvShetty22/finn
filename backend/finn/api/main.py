@@ -3,6 +3,8 @@
     uv run uvicorn finn.api.main:app --reload
 """
 
+import asyncio
+import json
 import os
 from datetime import timedelta
 
@@ -10,11 +12,14 @@ from datetime import datetime
 
 from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from sse_starlette.sse import EventSourceResponse
 from sqlmodel import func, select
 
 from finn import market
 from finn.config import IST, now
-from finn.db import Alert, Announcement, Company, ItemState, Price, init_db, session
+from finn.db import Announcement, Company, ItemState, LLMCall, Price, init_db, session
+from finn.pull import research
+from finn.pull import thesis as theses
 from finn.push import alerts, digest
 from finn.push import rules as user_rules
 
@@ -63,6 +68,7 @@ def short_name(name: str) -> str:
 def portfolio() -> dict:
     with session() as s:
         holdings, as_of = [], None
+        ts = theses.load(s, [c.symbol for c in s.exec(select(Company).where(Company.in_portfolio))])
         for c in s.exec(select(Company).where(Company.in_portfolio).order_by(Company.weight.desc())):
             ds = market.days(market.history(s, c.symbol, 60))
             if not ds:
@@ -73,7 +79,7 @@ def portfolio() -> dict:
                 "symbol": c.symbol, "name": short_name(c.name), "sector": c.sector, "weight": c.weight,
                 "close": round(last.close, 2), "chg_pct": last.chg_pct, "vol_ratio": last.vol_ratio,
                 "spark": [round(d.close, 2) for d in ds[-30:]],
-                "thesis_status": "none",  # Phase 3
+                "thesis_status": ts[c.symbol]["status"] if c.symbol in ts else "none",
                 "unseen": 0,  # filled once the brief exists
             })
         return {"as_of": as_of.isoformat() if as_of else None, "holdings": holdings}
@@ -149,3 +155,61 @@ def alert_seen(alert_id: str) -> dict:
         s.add(st)
         s.commit()
     return {"ok": True}
+
+
+@app.get("/api/research/{symbol}")
+async def research_deck(symbol: str, format: str | None = None, refresh: bool = False):
+    """SSE by default (head → section… → done); ?format=json returns the whole deck."""
+    if format == "json":
+        def run():
+            with session() as s:
+                return research.deck(s, symbol, refresh)
+        try:
+            return await asyncio.to_thread(run)
+        except LookupError as e:
+            raise HTTPException(404, str(e))
+
+    async def events():
+        s = session()
+        it = research.stream(s, symbol, refresh)
+        try:
+            while (item := await asyncio.to_thread(next, it, None)) is not None:
+                ev, data = item
+                yield {"event": ev, "data": json.dumps(data, default=str)}
+        finally:
+            s.close()
+
+    return EventSourceResponse(events())
+
+
+@app.get("/api/theses")
+def list_theses() -> dict:
+    with session() as s:
+        syms = [c.symbol for c in s.exec(select(Company).where(Company.in_portfolio))]
+        return {"items": [theses.public(t) for t in theses.load(s, syms).values()]}
+
+
+@app.get("/api/theses/{symbol}")
+def get_thesis(symbol: str) -> dict:
+    with session() as s:
+        t = theses.load(s, [symbol.upper()]).get(symbol.upper())
+    if not t:
+        raise HTTPException(404, f"no thesis for {symbol.upper()} yet: run research first")
+    return theses.public(t)
+
+
+@app.get("/api/stats/cost")
+def cost_stats() -> dict:
+    with session() as s:
+        rows = s.exec(select(LLMCall)).all()
+    by: dict[str, dict] = {}
+    for r in rows:
+        b = by.setdefault(r.purpose, {"purpose": r.purpose, "calls": 0, "cache_hits": 0, "tokens_in": 0, "tokens_out": 0, "inr": 0.0})
+        b["calls"] += 1
+        b["cache_hits"] += r.cached
+        b["tokens_in"] += r.tok_in
+        b["tokens_out"] += r.tok_out + r.tok_think
+        b["inr"] = round(b["inr"] + r.inr, 2)
+    hits = sum(r.cached for r in rows)
+    return {"total_inr": round(sum(r.inr for r in rows), 2), "calls": len(rows),
+            "cache_hit_rate": round(hits / len(rows), 2) if rows else 0, "by_purpose": sorted(by.values(), key=lambda b: -b["inr"])}

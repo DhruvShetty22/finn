@@ -38,6 +38,7 @@ class Scored:
     tier: str
     why: list[str] = field(default_factory=list)
     red_flag: str | None = None
+    thesis: dict | None = None  # ThesisImpact when a results card was judged against the holding's pillars
 
 
 def mgmt_level(text: str) -> int:
