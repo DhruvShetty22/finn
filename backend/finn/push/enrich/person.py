@@ -53,7 +53,8 @@ def enrich(s: Session, a: Announcement, red_flag: str | None = None) -> Enrichme
         doc = pdf.get_document(s, a.pdf_url, symbol=a.symbol, kind="filing")
         if doc.scanned:  # let the model read the pages
             x = ask("person_card", "extract", PROMPT, schema=Extract,
-                    pdf=_subset(http.get(a.pdf_url, ttl=0), list(range(min(5, doc.n_pages)))))
+                    pdf=_subset(http.get(a.pdf_url, ttl=0), list(range(min(5, doc.n_pages)))),
+                    pdf_key=f"{doc.sha}:0-5")
         else:
             text = "\n".join(doc.pages)[:14000]
             x = ask("person_card", "extract", f"{PROMPT}\n\n--- FILING TEXT ---\n{text}", schema=Extract)

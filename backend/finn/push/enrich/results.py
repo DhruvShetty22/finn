@@ -249,7 +249,7 @@ def enrich(s: Session, a: Announcement) -> Enrichment:
         pages, basis = _pick_pages(doc)
         raw = http.get(a.pdf_url, ttl=0)
         x = Extract.model_validate(ask("results_card", "extract", PROMPT.format(basis=basis), schema=Extract,
-                                       pdf=_subset(raw, pages)))
+                                       pdf=_subset(raw, pages), pdf_key=f"{doc.sha}:{pages}"))
         if not x.found or not x.current_quarter:
             raise ValueError("no P&L table found on the selected pages")
         fund = _fundamentals(s, a.symbol, quarter_label(x.current_quarter.period_end)[1])

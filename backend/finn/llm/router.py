@@ -59,9 +59,10 @@ def inr(model: str, tok_in: int, tok_out: int) -> float:
     return round((tok_in * pin + tok_out * pout) / 1e6 * USD_INR, 4)
 
 
-def _key(tier: str, prompt: str, pdf: bytes | None, schema) -> str:
+def _key(tier: str, prompt: str, pdf: bytes | None, schema, pdf_key: str | None = None) -> str:
     h = hashlib.sha256()
-    for part in (tier, prompt, hashlib.sha256(pdf).hexdigest() if pdf else "", _schema_repr(schema)):
+    pdf_id = pdf_key or (hashlib.sha256(pdf).hexdigest() if pdf else "")
+    for part in (tier, prompt, pdf_id, _schema_repr(schema)):
         h.update(part.encode())
         h.update(b"\0")
     return h.hexdigest()
@@ -94,10 +95,12 @@ def meter_view(m: dict) -> dict:
 
 
 def ask(purpose: str, tier: str, prompt: str, *, schema=None, pdf: bytes | None = None,
-        system: str | None = None, thinking: str | None = None, use_cache: bool = True, meter: dict | None = None):
+        system: str | None = None, thinking: str | None = None, use_cache: bool = True, meter: dict | None = None,
+        pdf_key: str | None = None):
     """Returns parsed JSON (dict/list) when `schema` is given, else text. Raises LLMError if every model fails.
-    `meter` (from new_meter) accumulates tokens and ₹ across calls, for per-section cost display."""
-    key = _key(tier, (system or "") + "\n" + prompt, pdf, schema)
+    `meter` (from new_meter) accumulates tokens and ₹ across calls, for per-section cost display.
+    `pdf_key` identifies the attachment for caching when its bytes aren't stable (PDF subsets get a fresh file id)."""
+    key = _key(tier, (system or "") + "\n" + prompt, pdf, schema, pdf_key)
     with Session(engine) as s:
         if use_cache and (hit := s.get(LLMCache, key)):
             s.add(LLMCall(ts=now(), purpose=purpose, model=hit.model, cached=True, key=key))
