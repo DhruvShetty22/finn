@@ -85,21 +85,32 @@ def _subset(raw: bytes, pages: list[int]) -> bytes:
         return out.tobytes()
 
 
+MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
 def quarter_label(period_end: str) -> tuple[str | None, str | None]:
-    """'30.09.2026' / '2026-09-30' / '30-Sep-26' → ('Q2 FY27', 'Sep 2026'). Indian FY runs Apr–Mar."""
-    if iso := re.search(r"(20\d\d)-(\d{1,2})-(\d{1,2})", period_end):
-        period_end = f"{iso.group(3)}.{iso.group(2)}.{iso.group(1)}"
-    m = re.search(r"(\d{1,2})[.\-/ ](\d{1,2}|[A-Za-z]{3,9})[.\-/ ,]+(\d{2,4})", period_end)
-    if not m:
+    """Any printed quarter-end → ('Q2 FY27', 'Sep 2026'). Seen in filings: '30.09.2026', '2026-09-30', '30-Sep-26',
+    '30th September, 2026', 'Sep 30, 2026', 'September 30, 2026', 'Q2FY27'. Indian FY runs Apr–Mar."""
+    t = (period_end or "").strip()
+    if m := re.search(r"Q([1-4])\s*'?\s*FY\s*'?(\d{2,4})", t, re.I):
+        q, fy = int(m.group(1)), int(m.group(2)) % 100
+        month, year = {1: 6, 2: 9, 3: 12, 4: 3}[q], 2000 + (fy if q == 4 else fy - 1)
+    elif m := re.search(r"(20\d\d)-(\d{1,2})-(\d{1,2})", t):
+        year, month = int(m.group(1)), int(m.group(2))
+    elif m := re.search(r"\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b", t):
+        month, year = int(m.group(2)), int(m.group(3))
+    elif mon := re.search(r"(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*", t, re.I):
+        month = MONTHS[mon.group(1).lower()]
+        y4 = re.search(r"(20\d\d)", t)
+        y2 = re.search(r"[-/' ](\d{2})\s*$", t)
+        if not (y4 or y2):
+            return None, None
+        year = int(y4.group(1)) if y4 else int(y2.group(1))
+    else:
         return None, None
-    mon = m.group(2)
-    try:
-        month = int(mon) if mon.isdigit() else datetime.strptime(mon[:3].title(), "%b").month
-    except ValueError:
-        return None, None
-    year = int(m.group(3)) + (2000 if len(m.group(3)) == 2 else 0)
+    year += 2000 if year < 100 else 0
     q = {6: 1, 9: 2, 12: 3, 3: 4}.get(month)
-    if not q:
+    if not q or not 2000 < year < 2100:
         return None, None
     fy = year + 1 if month >= 4 else year
     return f"Q{q} FY{fy % 100:02d}", f"{date(year, month, 1):%b %Y}"
@@ -148,8 +159,14 @@ def _verdict(rows: dict, margin: dict | None, is_bank: bool) -> str:
     low = top if is_bank else top.lower()
     if ry is None or py is None:
         return f"{top} {_fmt(ry)} YoY" if ry is not None else "Results filed; quarter comparison incomplete"
-    if pat.get("cur") is not None and pat["cur"] < 0 <= (pat.get("prev_y") or 0):
-        s = f"Swung to a loss: PAT ₹{pat['cur']:,.0f} Cr vs ₹{pat['prev_y']:,.0f} Cr a year ago"
+    if pat.get("cur") is not None and pat["cur"] < 0:
+        prev = pat.get("prev_y")
+        if prev is None or prev >= 0:
+            s = f"Swung to a loss: PAT ₹{pat['cur']:,.0f} Cr vs ₹{prev or 0:,.0f} Cr a year ago"
+        else:
+            s = f"Loss of ₹{abs(pat['cur']):,.0f} Cr, {'narrower' if pat['cur'] > prev else 'wider'} than ₹{abs(prev):,.0f} Cr a year ago; {low} {_fmt(ry)}"
+    elif pat.get("prev_y") is not None and pat["prev_y"] < 0 <= (pat.get("cur") or 0):
+        s = f"Back to profit: PAT ₹{pat['cur']:,.0f} Cr vs a ₹{abs(pat['prev_y']):,.0f} Cr loss a year ago"
     elif py >= 20 and ry >= 10:
         s = f"Strong quarter: {low} {_fmt(ry)}, PAT {_fmt(py)} YoY"
     elif ry > 3 and py < 0:
@@ -203,6 +220,12 @@ def build_card(x: Extract, fund: dict | None) -> tuple[dict, dict]:
         ok_pbt = abs(rows["PBT"]["cur"] - ref_pbt) <= max(2.0, abs(ref_pbt) * 0.03)
         ok_rev = x.is_bank or ref_rev is None or rows["Revenue"]["cur"] is None or abs(rows["Revenue"]["cur"] - ref_rev) <= max(2.0, ref_rev * 0.03)
         check = "matched" if ok_pbt and ok_rev else "mismatch"
+    elif ref_pbt and rows["PBT"]["cur"] and abs(ref_pbt) > 10:
+        # different basis (standalone vs consolidated) can't be compared exactly, but it never explains a >3× gap:
+        # that means a misread table or unit, so say so instead of showing the numbers as fine
+        ratio = abs(rows["PBT"]["cur"]) / abs(ref_pbt)
+        if ratio > 3 or ratio < 1 / 3:
+            check = "mismatch"
 
     card = {"kind": "results", "period": period, "basis": x.basis, "is_financial": x.is_bank,
             "rows": list(rows.values()), "margin": margin,
