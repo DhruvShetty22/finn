@@ -3,11 +3,12 @@
 import re
 from datetime import datetime, timedelta
 
-from sqlmodel import Session, func, select
+from sqlmodel import Session, select
 
 from finn import market
 from finn.config import IST, now
-from finn.db import Alert, Announcement, Company, Enrichment, ItemState
+from finn.db import Announcement, Company, Enrichment, ItemState
+from finn.push import alerts
 from finn.push import rules as user_rules
 from finn.push.events import ANCILLARY_WINDOW, group
 from finn.push.score import Scored, promote_primary, score
@@ -68,7 +69,7 @@ def build(s: Session, start: datetime | None = None, end: datetime | None = None
                     "routine": len(routine), "headline": _summary_line(top + read, len(routine))},
         "top": items(top), "worth_reading": items(read),
         "routine": {"count": len(routine), "by_category": by_cat, "items": items(routine)},
-        "alerts_unseen": s.exec(select(func.count()).select_from(Alert).where(Alert.seen == False)).one(),  # noqa: E712
+        "alerts_unseen": alerts.unseen(s),
     }
 
 

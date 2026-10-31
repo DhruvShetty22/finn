@@ -98,12 +98,13 @@ def parse(html: str) -> dict:
     }
 
 
-def fetch_company(symbol: str) -> dict:
-    """Parsed company page. Raises http.FetchError if screener doesn't know the symbol."""
-    html = http.get(f"{BASE}/company/{symbol}/consolidated/", ttl=STALE_SECONDS).decode()
+def fetch_company(symbol: str, fresh: bool = False) -> dict:
+    """Parsed company page. Raises http.FetchError if screener doesn't know the symbol. fresh=True skips the disk cache."""
+    ttl = None if fresh else STALE_SECONDS
+    html = http.get(f"{BASE}/company/{symbol}/consolidated/", ttl=ttl).decode()
     data, basis = parse(html), "consolidated"
     if not data["quarters"] or not data["profit_loss"]:
-        html = http.get(f"{BASE}/company/{symbol}/", ttl=STALE_SECONDS).decode()
+        html = http.get(f"{BASE}/company/{symbol}/", ttl=ttl).decode()
         data, basis = parse(html), "standalone"
     if data["quarters"]:  # label quarter source PDFs with their periods
         for src, p in zip(data["quarter_sources"], data["quarters"]["periods"]):

@@ -67,6 +67,12 @@ def score(e: Event, *, rules: dict, weight: float | None, reaction: Day | None, 
     s, why, flag = BASE.get(cat, 5), [], None
     period = (facts or {}).get("period")
     why.append(f"{period} results" if cat == "results" and period else LABEL.get(cat, cat))
+    if cat == "results" and facts and facts.get("pat_yoy") is not None:
+        py, ry, mc = facts["pat_yoy"], facts.get("rev_yoy") or 0, facts.get("margin_chg_pp")
+        surprise = abs(py) >= 25 or (mc is not None and abs(mc) >= 2) or (ry > 3 and py < 0)
+        in_line = abs(py) < 8 and abs(ry) < 8 and (mc is None or abs(mc) < 1)
+        s += 8 if surprise else -8 if in_line else 0
+        why[0] = f"{period} results · PAT {py:+.0f}% YoY"
 
     if e.ancillary_only:
         s -= 15

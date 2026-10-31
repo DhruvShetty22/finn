@@ -15,7 +15,7 @@ from sqlmodel import func, select
 from finn import market
 from finn.config import IST, now
 from finn.db import Alert, Announcement, Company, ItemState, Price, init_db, session
-from finn.push import digest
+from finn.push import alerts, digest
 from finn.push import rules as user_rules
 
 app = FastAPI(title="FINN")
@@ -109,6 +109,8 @@ def triage(item_id: str, action: str) -> dict:
     if action not in ("seen", "keep"):
         raise HTTPException(404)
     with session() as s:
+        if not s.get(Announcement, item_id):
+            raise HTTPException(404, f"unknown item {item_id}")
         st = s.get(ItemState, item_id) or ItemState(id=item_id)
         if action == "seen":
             st.seen = True
@@ -129,3 +131,21 @@ def get_rules() -> dict:
 def put_rules(body: dict = Body(...)) -> dict:
     with session() as s:
         return user_rules.put(s, body)
+
+
+@app.get("/api/alerts")
+def get_alerts() -> dict:
+    with session() as s:
+        return {"items": alerts.compute(s)}
+
+
+@app.post("/api/alerts/{alert_id}/seen")
+def alert_seen(alert_id: str) -> dict:
+    with session() as s:
+        if alert_id not in {a["id"] for a in alerts.compute(s)}:
+            raise HTTPException(404, f"unknown alert {alert_id}")
+        st = s.get(ItemState, alert_id) or ItemState(id=alert_id)
+        st.seen = True
+        s.add(st)
+        s.commit()
+    return {"ok": True}

@@ -2,7 +2,8 @@
 
     uv run python -m finn.jobs seed            # first run: equity list, portfolio, 6mo prices, 30d filings, fundamentals
     uv run python -m finn.jobs eod             # after market close: refresh prices
-    uv run python -m finn.jobs filings [--days N]
+    uv run python -m finn.jobs filings [--days N]  # fetch → classify → enrich cards
+    uv run python -m finn.jobs enrich [--days N] [--retry]
     uv run python -m finn.jobs fundamentals SYMBOL [SYMBOL ...]
 """
 
@@ -12,6 +13,7 @@ import logging
 from finn import config
 from finn.db import Company, init_db, session
 from finn.ingest import nse, prices, screener
+from finn.push import classify, enrich
 
 log = logging.getLogger("finn.jobs")
 
@@ -44,6 +46,9 @@ def main() -> None:
     sub.add_parser("eod")
     f = sub.add_parser("filings")
     f.add_argument("--days", type=int, default=2)
+    en = sub.add_parser("enrich")
+    en.add_argument("--days", type=int, default=7)
+    en.add_argument("--retry", action="store_true", help="retry events whose card failed before")
     fu = sub.add_parser("fundamentals")
     fu.add_argument("symbols", nargs="*")
     a = p.parse_args()
@@ -61,6 +66,11 @@ def main() -> None:
             prices.sync_prices(s, syms, period="1mo")
         elif a.cmd == "filings":
             nse.sync_announcements(s, days=a.days, symbols=syms)
+            log.info("classify: %s", classify.run(s))
+            log.info("enrich: %s", enrich.run(s, days=max(a.days, 2)))
+        elif a.cmd == "enrich":
+            log.info("classify: %s", classify.run(s))
+            log.info("enrich: %s", enrich.run(s, days=a.days, retry_failed=a.retry))
         elif a.cmd == "fundamentals":
             fundamentals(s, a.symbols or syms)
 
