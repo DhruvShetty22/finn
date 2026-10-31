@@ -198,6 +198,16 @@ def get_thesis(symbol: str) -> dict:
     return theses.public(t)
 
 
+@app.put("/api/theses/{symbol}")
+def put_thesis(symbol: str, body: dict = Body(...)) -> dict:
+    sym = symbol.upper()
+    with session() as s:
+        if sym not in theses.load(s, [sym]):
+            raise HTTPException(404, f"no thesis for {sym} yet: run research first")
+        theses.save_edit(s, sym, body.get("pillars", []))
+        return theses.public(theses.load(s, [sym])[sym])
+
+
 @app.get("/api/stats/cost")
 def cost_stats() -> dict:
     with session() as s:

@@ -79,5 +79,36 @@ def load(s, symbols: list[str]) -> dict[str, dict]:
 
     from finn.db import ResearchCache
 
+    from finn.db import Setting
+
     rows = s.exec(select(ResearchCache).where(ResearchCache.symbol.in_(symbols))).all()
-    return {r.symbol: t for r in rows if (t := from_deck(r.symbol, r.deck))["pillars"]}
+    out = {r.symbol: from_deck(r.symbol, r.deck) for r in rows}
+    for sym, t in out.items():
+        if edit := s.get(Setting, f"thesis:{sym}"):
+            _apply_edit(t, edit.value["pillars"])
+    return {sym: t for sym, t in out.items() if t["pillars"]}
+
+
+def save_edit(s, symbol: str, pillars: list[dict]) -> None:
+    from finn.db import Setting
+
+    clean = [{k: p.get(k) for k in ("id", "text", "metric", "target", "period")} for p in pillars if (p.get("text") or "").strip()]
+    s.merge(Setting(key=f"thesis:{symbol}", value={"pillars": clean}))
+    s.commit()
+
+
+def _apply_edit(t: dict, edits: list[dict]) -> None:
+    """The user's pillars replace the drafted ones; an edited pillar keeps its source and status, a new one starts untested."""
+    old = {p["id"]: p for p in t["pillars"]}
+    pillars = []
+    for i, e in enumerate(edits):
+        base = old.get(e.get("id") or "")
+        pid = base["id"] if base else f"{t['symbol'].lower()}-u{i + 1}"
+        target = e.get("target") or (base or {}).get("target")
+        pillars.append({**(base or {"source": {"doc": "Your own pillar", "date": now().date().isoformat(), "url": "", "page": None, "quote": None},
+                                     "status": "untested", "evidence": []}),
+                        "id": pid, "text": e["text"], "metric": e.get("metric") or (base or {}).get("metric") or "other",
+                        "target": target, "period": e.get("period") or (base or {}).get("period"), "_low": _low(target)})
+    t["pillars"], t["user_edited"] = pillars, True
+    st = [p["status"] for p in pillars]
+    t["status"] = "none" if not pillars else "challenged" if "broken" in st else "watch" if "at_risk" in st else "intact"

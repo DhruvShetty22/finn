@@ -173,8 +173,8 @@ def cash_quality(f: dict) -> dict:
     pat = [pat_by.get(p) for p in periods]
     ratio = [round(c / p, 2) if c is not None and p else None for c, p in zip(cfo, pat)]
     tot = round(_sum(cfo) / _sum(pat), 2) if _sum(cfo) is not None and _sum(pat) else None
-    verdict = None if tot is None else "good" if tot >= 0.9 else "watch" if tot >= 0.6 else "poor"
-    take = {"good": "Profits turn into cash", "watch": "Cash lags profits", "poor": "Profits are not turning into cash"}.get(verdict, "Cash conversion n/a")
+    verdict = None if tot is None else "good" if tot >= 0.9 else "ok" if tot >= 0.6 else "weak"
+    take = {"good": "Profits turn into cash", "ok": "Cash lags profits", "weak": "Profits are not turning into cash"}.get(verdict, "Cash conversion n/a")
     if tot is not None:
         take += f": {len(periods)}-year operating cash flow / PAT = {tot:.2f}"
     return _section("cash_quality", "Cash quality", take,

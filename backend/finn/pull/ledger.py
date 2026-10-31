@@ -105,9 +105,17 @@ def _quarters(fy: int, ns) -> list[str]:
     return [f"Q{n} FY{fy:02d}" for n in ns]
 
 
+# "30% growth in solutions and products" is a segment promise; checking it against company revenue would be unfair
+SEGMENT = re.compile(r"\b(growth|margins?|revenues?)\s+(in|of|for|from)\s+(the |our )?[\w& -]{0,30}"
+                     r"(segments?|solutions?|products?|divisions?|verticals?|business(es)?|portfolio|geograph\w*|regions?|practices?)\b", re.I)
+
+
 def check(c: Claim, act: dict, call_fy: int | None) -> dict:
     """Code verdict for one claim against reported numbers."""
     out = {"actual": None, "verdict": "unverifiable", "note": None, "checked_in": None, "tracking": None}
+    if c.metric != "other" and SEGMENT.search(c.quote):
+        out["note"] = "segment-level guidance; not comparable with company totals"
+        return out
     per = _period(c.period, call_fy)
     key = {"revenue_growth": "revenue", "pat_growth": "pat", "ebitda_margin": "margin"}.get(c.metric)
     if not key or not per:

@@ -189,3 +189,15 @@ Ticker autocomplete over the NSE equity list. `{ results: { symbol, name }[] }`
 
 ### `GET /api/stats/cost`
 `{ total_inr, calls, cache_hit_rate, by_purpose: { purpose, calls, tokens_in, tokens_out, inr }[] }`
+
+
+---
+
+## v1 notes (Sat 31 Oct, crunch scope, all additive)
+
+- **Cut:** research sections `snapshot` and `bull_bear` always come back `status: "empty"`, with a takeaway explaining the cut. `PUT /api/rules` is built. `PUT /api/theses/{symbol}` is built but minimal: edited pillars replace the drafted ones, and an edited pillar keeps its source and status.
+- **Ledger:** `verdict` can also be `"unverifiable"` (qualitative, segment-level or open-ended promises), and `score` gains that key. `checked_in` and `note` may be null. Each promise also carries optional `period` and `tracking` (`"on_track" | "at_risk" | null`). Promises are ordered missed → partly → delivered → too_early → unverifiable, and `citations[i]` belongs to `promises[i]`.
+- **Cash quality** `verdict`: `"good" | "ok" | "weak"`. `fcf` is screener's Free Cash Flow row. Banks: `cash_quality` is empty and `balance_sheet.data.wc` is null.
+- **Alerts** are computed from the current rules on every read, so a `PUT /api/rules` re-draws them. Ids are deterministic (`volume:SYM:YYYY-MM-DD`, `price:…`, `category:<item id>`).
+- `POST /api/items/{id}/…` and `/api/alerts/{id}/seen` return 404 for unknown ids.
+- `GET /api/theses` → `{ items: Thesis[] }`. Theses exist only for symbols with a research deck; build them with `python -m finn.jobs prewarm`.

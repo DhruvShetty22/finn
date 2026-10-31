@@ -135,14 +135,15 @@ export type SnapshotData = {
   segments: { name: string; share_pct: number; growth_pct: number | null }[];
   key_facts: string[];
 };
-export type PromiseVerdict = "delivered" | "partly" | "missed" | "too_early";
+export type PromiseVerdict = "delivered" | "partly" | "missed" | "too_early" | "unverifiable";
 export type LedgerData = {
-  score: Record<PromiseVerdict, number>;
+  score: Partial<Record<PromiseVerdict, number>>;
   quarters: string[];
   promises: {
-    id: string; said_in: string; said_on: string; checked_in: string; metric: string;
+    id: string; said_in: string; said_on: string; checked_in: string | null; metric: string;
     quote: string; page: number | null; target: string | null; actual: string | null;
-    verdict: PromiseVerdict; note: string; url: string;
+    verdict: PromiseVerdict; note: string | null; url: string;
+    period?: string | null; tracking?: "on_track" | "at_risk" | null;
   }[];
   synthesis: { text: string; cites: number[] }[];
 };

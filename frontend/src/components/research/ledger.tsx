@@ -10,6 +10,7 @@ export const PROMISE_META: Record<PromiseVerdict, { label: string; glyph: string
   partly: { label: "Partly", glyph: "◐", text: "text-watch", fill: "var(--watch)", soft: "bg-watch-soft" },
   missed: { label: "Missed", glyph: "✕", text: "text-down", fill: "var(--down)", soft: "bg-down-soft" },
   too_early: { label: "Too early", glyph: "…", text: "text-ink-3", fill: "var(--ink-3)", soft: "bg-surface-2" },
+  unverifiable: { label: "Not scored", glyph: "·", text: "text-ink-3", fill: "var(--line)", soft: "bg-surface-2" },
 };
 const ORDER: PromiseVerdict[] = ["delivered", "partly", "missed", "too_early"];
 
@@ -19,8 +20,8 @@ const METRIC_SHORT: Record<string, string> = {
 };
 
 /** "Q3 FY26" → 26*4+3; a bare "FY26" sits at its Q4. */
-function qIndex(label: string): number | null {
-  const m = label.match(/(?:Q([1-4])\s*)?FY\s?(\d{2})/i);
+function qIndex(label: string | null | undefined): number | null {
+  const m = label?.match(/(?:Q([1-4])\s*)?FY\s?(\d{2})/i);
   if (!m) return null;
   return Number(m[2]) * 4 + (m[1] ? Number(m[1]) : 4);
 }
@@ -28,11 +29,15 @@ const qLabel = (i: number) => `Q${((i - 1) % 4) + 1} FY${Math.floor((i - 1) / 4)
 
 export function Ledger({ data, citations }: { data: LedgerData; citations: Citation[] }) {
   const [open, setOpen] = useState<string | null>(null);
-  const testable = data.score.delivered + data.score.partly + data.score.missed;
-  const total = ORDER.reduce((s, k) => s + data.score[k], 0) || 1;
+  const n = (k: PromiseVerdict) => data.score[k] ?? 0;
+  const testable = n("delivered") + n("partly") + n("missed");
+  const total = ORDER.reduce((s, k) => s + n(k), 0) || 1;
+  // Qualitative / segment / open-ended promises can't be checked against reported numbers: list them, don't score them.
+  const scored = data.promises.filter((p) => p.verdict !== "unverifiable");
+  const unscored = data.promises.filter((p) => p.verdict === "unverifiable");
 
   // Timeline columns run from the earliest promise to the latest check.
-  const idx = data.promises.flatMap((p) => [qIndex(p.said_in), qIndex(p.checked_in)]).filter((v): v is number => v != null);
+  const idx = scored.flatMap((p) => [qIndex(p.said_in), qIndex(p.checked_in)]).filter((v): v is number => v != null);
   const lo = Math.min(...idx), hi = Math.max(...idx);
   const cols = idx.length ? Array.from({ length: hi - lo + 1 }, (_, i) => lo + i) : [];
   const colX = (q: number) => ((q - lo + 0.5) / cols.length) * 100;
@@ -41,18 +46,18 @@ export function Ledger({ data, citations }: { data: LedgerData; citations: Citat
     <div>
       {/* Track record */}
       <div className="flex items-baseline gap-2">
-        <span className="num text-display font-semibold tracking-tight">{data.score.delivered}</span>
+        <span className="num text-display font-semibold tracking-tight">{n("delivered")}</span>
         <span className="text-body text-ink-2">of {testable} testable promises delivered in full</span>
       </div>
       <div className="mt-3 flex h-2 gap-[2px] overflow-hidden rounded-full" aria-hidden>
-        {ORDER.filter((k) => data.score[k] > 0).map((k) => (
-          <div key={k} style={{ width: `${(data.score[k] / total) * 100}%`, background: PROMISE_META[k].fill }} />
+        {ORDER.filter((k) => n(k) > 0).map((k) => (
+          <div key={k} style={{ width: `${(n(k) / total) * 100}%`, background: PROMISE_META[k].fill }} />
         ))}
       </div>
       <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-micro">
         {ORDER.map((k) => (
           <li key={k} className={PROMISE_META[k].text}>
-            {PROMISE_META[k].glyph} <span className="num font-semibold">{data.score[k]}</span>{" "}
+            {PROMISE_META[k].glyph} <span className="num font-semibold">{n(k)}</span>{" "}
             <span className="text-ink-2">{PROMISE_META[k].label.toLowerCase()}</span>
           </li>
         ))}
@@ -79,7 +84,7 @@ export function Ledger({ data, citations }: { data: LedgerData; citations: Citat
           {cols.map((q) => <div key={q} className="num flex-1 text-center">{qLabel(q).replace(" ", " ")}</div>)}
         </div>
         <ul className="mt-1">
-          {data.promises.map((p) => {
+          {scored.map((p) => {
             const a = qIndex(p.said_in), b = qIndex(p.checked_in);
             const m = PROMISE_META[p.verdict];
             const isOpen = open === p.id;
@@ -111,7 +116,7 @@ export function Ledger({ data, citations }: { data: LedgerData; citations: Citat
                     <blockquote className="text-small text-ink italic">&ldquo;{p.quote}&rdquo;</blockquote>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-small">
                       <div><div className="text-micro text-ink-3">Promised</div><div className="num font-medium">{p.target ?? "Qualitative"}</div></div>
-                      <div><div className="text-micro text-ink-3">Actual ({p.checked_in})</div><div className={`num font-medium ${m.text}`}>{p.actual ?? "—"}</div></div>
+                      <div><div className="text-micro text-ink-3">Actual ({p.checked_in ?? "n/a"})</div><div className={`num font-medium ${m.text}`}>{p.actual ?? "—"}</div></div>
                     </div>
                     <p className="mt-2 text-small text-ink-2"><span className={`font-medium ${m.text}`}>{m.glyph} {m.label}.</span> {p.note}</p>
                     <div className="mt-2">
@@ -123,8 +128,24 @@ export function Ledger({ data, citations }: { data: LedgerData; citations: Citat
             );
           })}
         </ul>
+        {unscored.length > 0 && (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-small text-ink-2">
+              + {unscored.length} qualitative or segment-level promise{unscored.length > 1 ? "s" : ""}, listed but not scored
+            </summary>
+            <ul className="mt-2 space-y-2">
+              {unscored.map((p) => (
+                <li key={p.id} className="text-small text-ink-2">
+                  <span className="italic">&ldquo;{p.quote}&rdquo;</span>{" "}
+                  <CitationChip c={{ doc: p.said_in, date: p.said_on, url: p.url, page: p.page, quote: null }} />
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
         <p className="mt-2 text-micro text-ink-3">
-          Numeric promises are checked in code against reported figures; only qualitative ones are judged by the model.
+          Every promise is a verbatim quote from a transcript. Numeric ones are checked in code against reported figures;
+          the model only extracts quotes and writes the three-line summary.
         </p>
       </div>
     </div>
