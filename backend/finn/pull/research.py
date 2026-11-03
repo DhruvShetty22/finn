@@ -88,8 +88,11 @@ def stream(s: Session, symbol: str, refresh: bool = False) -> Iterator[tuple[str
 
     total = _total(sections)
     deck = {**head, "sections": sections, "total_cost": total}
-    s.merge(ResearchCache(symbol=symbol, updated_at=now(), inputs=fp, deck=deck))
-    s.commit()
+    if led.get("degraded"):  # a model call failed: serve this deck, but don't pin it; the next request retries
+        log.warning("research %s: ledger degraded, not caching", symbol)
+    else:
+        s.merge(ResearchCache(symbol=symbol, updated_at=now(), inputs=fp, deck=deck))
+        s.commit()
     yield "done", {"symbol": symbol, "total_cost": total, "elapsed_ms": int((now() - t0).total_seconds() * 1000)}
 
 

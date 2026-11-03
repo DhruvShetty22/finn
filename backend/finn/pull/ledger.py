@@ -210,6 +210,7 @@ def build(s: Session, symbol: str, fund: dict) -> tuple[dict, list[dict]]:
 
     with ThreadPoolExecutor(max_workers=5) as pool:
         extracted = list(pool.map(extract, docs))
+    failed_calls = sum(1 for _, _, x in extracted if x is None)
 
     act = actuals(fund)
     promises, citations = [], []
@@ -234,24 +235,27 @@ def build(s: Session, symbol: str, fund: dict) -> tuple[dict, list[dict]]:
     if not promises:
         sec = _empty("Management gave no explicit numeric guidance on the calls we read")
         sec["cost"] = meter_view(meter)
+        sec["degraded"] = bool(failed_calls)
         return sec, sources
 
     score = {k: sum(p["verdict"] == k for p in promises) for k in ("delivered", "partly", "missed", "too_early", "unverifiable")}
     rows = "\n".join(f"{i} | {p['said_in']} | {p['metric']} | {p['quote'][:160]} | {p['target']} | {p['period']} | "
                      f"{p['actual']} | {p['verdict']} | {p['note'] or ''}" for i, p in enumerate(promises))
     takeaway = _default_takeaway(score)
-    synthesis = []
+    synthesis, synth_failed = [], False
     try:
         sy = Synth.model_validate(ask("ledger_synthesis", "reason", SYNTH.format(rows=rows), schema=Synth, meter=meter))
         takeaway = sy.takeaway
         synthesis = [{"text": l.text, "cites": [i for i in l.cites if 0 <= i < len(promises)]} for l in sy.synthesis[:3]]
     except LLMError as e:
         log.warning("ledger synthesis %s failed: %s", symbol, e)
+        synth_failed = True
 
     checked_quarters = sorted({p["checked_in"] for p in promises if p["checked_in"]})
     return {"key": "ledger", "status": "ok", "title": "Promised vs delivered", "takeaway": takeaway,
             "data": {"score": score, "quarters": checked_quarters, "promises": promises, "synthesis": synthesis},
-            "citations": citations, "cost": meter_view(meter)}, sources
+            "citations": citations, "cost": meter_view(meter),
+            "degraded": bool(failed_calls or synth_failed)}, sources
 
 
 def _target(cl: Claim) -> str | None:
