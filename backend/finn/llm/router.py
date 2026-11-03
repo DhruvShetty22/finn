@@ -45,6 +45,7 @@ PRICE_USD = {
 }
 USD_INR = float(os.getenv("FINN_USD_INR", "88"))
 
+last_error: dict | None = None  # most recent failure, for /api/health (never includes the key)
 _exhausted: set[str] = set()  # models whose free-tier *daily* quota is spent: skip them for the rest of this process
 
 _client = genai.Client(api_key=GEMINI_API_KEY, http_options=types.HttpOptions(timeout=90_000))
@@ -122,6 +123,7 @@ def ask(purpose: str, tier: str, prompt: str, *, schema=None, pdf: bytes | None 
                                                     config=_config(tier, schema, system, thinking))
             except errors.APIError as e:
                 last_err = f"{model}: {e.code} {str(e)[:160]}"
+                _note(model, e.code, str(e))
                 log.warning("LLM %s %s failed: %s", purpose, model, last_err)
                 if e.code == 429 and _daily_quota(e):
                     _exhausted.add(model)  # waiting won't help until the quota resets (midnight Pacific)
@@ -132,6 +134,7 @@ def ask(purpose: str, tier: str, prompt: str, *, schema=None, pdf: bytes | None 
                 break  # 5xx / timeout / other: next model in the chain
             except Exception as e:  # network timeouts surface as httpx errors
                 last_err = f"{model}: {type(e).__name__} {e}"
+                _note(model, None, f"{type(e).__name__}: {e}")
                 log.warning("LLM %s %s failed: %s", purpose, model, last_err)
                 break
             value = _parse(r, schema)
@@ -165,6 +168,15 @@ def _parse(r, schema):
         return json.loads(r.text)
     except (TypeError, json.JSONDecodeError):
         return None
+
+
+def _note(model: str, code: int | None, message: str) -> None:
+    global last_error
+    last_error = {"model": model, "code": code, "message": message[:160], "at": now().isoformat(timespec="seconds")}
+
+
+def health() -> dict:
+    return {"configured": bool(GEMINI_API_KEY), "exhausted_today": sorted(_exhausted), "last_error": last_error}
 
 
 def _daily_quota(e: errors.APIError) -> bool:

@@ -18,6 +18,7 @@ from sqlmodel import func, select
 
 from finn import market
 from finn.config import IST, now
+from finn.llm import router
 from finn.db import Announcement, Company, ItemState, LLMCall, Price, init_db, session
 from finn.pull import research
 from finn.pull import thesis as theses
@@ -45,6 +46,7 @@ def health() -> dict:
             "ok": True,
             "announcements": s.exec(select(func.count()).select_from(Announcement)).one(),
             "last_eod": s.exec(select(func.max(Price.date))).one(),
+            "llm": router.health(),
         }
 
 

@@ -64,7 +64,24 @@ def copy_db(url: str) -> None:
             for i in range(0, len(rows), 500):
                 w.execute(table.insert(), rows[i:i + 500])
             log.info("copied %s: %d rows", table.name, len(rows))
+        if dst.dialect.name == "postgresql":
+            reset_sequences(w)
     log.info("target: %s", dst.url.render_as_string(hide_password=True).split("@")[-1].split("/")[0])
+
+
+def reset_sequences(conn) -> None:
+    """Rows copied with explicit ids leave Postgres sequences at 1, so the next insert collides (IntegrityError).
+    Move every serial sequence past the copied max id."""
+    from sqlalchemy import text
+    from sqlmodel import SQLModel
+
+    for table in SQLModel.metadata.sorted_tables:
+        for col in table.primary_key.columns:
+            if col.autoincrement is True or (col.autoincrement == "auto" and col.type.python_type is int):
+                seq = conn.execute(text("SELECT pg_get_serial_sequence(:t, :c)"), {"t": table.name, "c": col.name}).scalar()
+                if seq:
+                    conn.execute(text(f'SELECT setval(:s, COALESCE((SELECT MAX("{col.name}") FROM "{table.name}"), 0) + 1, false)'), {"s": seq})
+                    log.info("sequence %s reset", seq)
 
 
 def main() -> None:

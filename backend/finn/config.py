@@ -43,7 +43,8 @@ def _db_url() -> str:
 
 
 DATABASE_URL = _db_url()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# tolerate dashboard paste artefacts (surrounding quotes, whitespace, a trailing newline)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip().strip("'\"").strip()
 # On-disk HTTP cache for development; production relies on the DB tables instead.
 HTTP_CACHE = os.getenv("FINN_HTTP_CACHE", "0" if ON_VERCEL else "1") == "1"
 
