@@ -20,8 +20,13 @@ def now() -> datetime:
     return datetime.now(IST)
 
 
-DATA = Path(os.getenv("FINN_DATA_DIR", ROOT / "data"))
-DATA.mkdir(parents=True, exist_ok=True)
+ON_VERCEL = bool(os.getenv("VERCEL"))  # serverless functions: only /tmp is writable
+DATA = Path(os.getenv("FINN_DATA_DIR") or ("/tmp/finn" if ON_VERCEL else ROOT / "data"))
+try:
+    DATA.mkdir(parents=True, exist_ok=True)
+except OSError:  # read-only filesystem we didn't anticipate: fall back rather than crash at import
+    DATA = Path("/tmp/finn")
+    DATA.mkdir(parents=True, exist_ok=True)
 
 
 def _db_url() -> str:
@@ -40,7 +45,7 @@ def _db_url() -> str:
 DATABASE_URL = _db_url()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # On-disk HTTP cache for development; production relies on the DB tables instead.
-HTTP_CACHE = os.getenv("FINN_HTTP_CACHE", "1") == "1"
+HTTP_CACHE = os.getenv("FINN_HTTP_CACHE", "0" if ON_VERCEL else "1") == "1"
 
 
 @lru_cache

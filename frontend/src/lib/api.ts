@@ -2,16 +2,19 @@ import type {
   Alert, Brief, Cost, PillarInput, Portfolio, ResearchDeck, Rules, SearchResult, Section, Thesis,
 } from "./types";
 
-// With no API base configured, dev runs entirely on contracts/fixtures (served at /fixtures).
+// NEXT_PUBLIC_API_BASE:
+//   a URL → that backend.
+//   "/"   → same origin: Vercel services route /api/* on this domain to the FastAPI service.
+//   unset → same origin in a production build; contracts/fixtures (served at /fixtures) in dev.
 // Production never falls back to fixtures unless NEXT_PUBLIC_USE_FIXTURES=1 says so explicitly.
-const BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/$/, "");
-export const USING_FIXTURES =
-  BASE === "" && (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_USE_FIXTURES === "1");
-const MISCONFIGURED = BASE === "" && !USING_FIXTURES;
+const RAW = (process.env.NEXT_PUBLIC_API_BASE ?? "").trim();
+const PROD = process.env.NODE_ENV === "production";
+export const USING_FIXTURES = RAW === "" && (!PROD || process.env.NEXT_PUBLIC_USE_FIXTURES === "1");
+const BASE = RAW === "/" ? "" : RAW.replace(/\/$/, "");
 // Dev-only, for integrating while the backend grows: with an API base set, any endpoint that
 // 404s falls back to its fixture. Opt in with NEXT_PUBLIC_FIXTURE_FALLBACK=1 in .env.local.
 export const FIXTURE_FALLBACK =
-  BASE !== "" && process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_FIXTURE_FALLBACK === "1";
+  BASE !== "" && !PROD && process.env.NEXT_PUBLIC_FIXTURE_FALLBACK === "1";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -56,7 +59,6 @@ function fixtureUrl(path: string): string | null {
 
 /** SWR fetcher: keys are API paths such as "/brief?from=…". */
 export async function fetcher<T>(path: string): Promise<T> {
-  if (MISCONFIGURED) throw new ApiError(0, "NEXT_PUBLIC_API_BASE is not set");
   if (!USING_FIXTURES) {
     try {
       return await getJson<T>(`${BASE}/api${path}`);
@@ -133,9 +135,27 @@ export function streamResearch(symbol: string, h: StreamHandlers): () => void {
     es.close();
     const data = (e as MessageEvent).data;
     if (!heard && !data && FIXTURE_FALLBACK) { fallback = simulateFromFixture(symbol, h); return; }
+    // The stream never started (a proxy that doesn't pass text/event-stream, a cold function...):
+    // fetch the same deck as one JSON response instead of failing.
+    if (!heard && !data) { fallback = deckAsJson(symbol, h); return; }
     h.onError(data ? JSON.parse(data).message : "Connection to the research stream was lost.");
   });
   return () => { es.close(); fallback?.(); };
+}
+
+function deckAsJson(symbol: string, h: StreamHandlers): () => void {
+  let cancelled = false;
+  getJson<ResearchDeck & { total_cost: Cost }>(`${BASE}/api/research/${encodeURIComponent(symbol)}?format=json`)
+    .then((deck) => {
+      if (cancelled) return;
+      h.onHead?.({ symbol: deck.symbol, name: deck.name, as_of: deck.as_of, sources: deck.sources });
+      deck.sections.forEach((s) => h.onSection(s));
+      h.onDone({ symbol: deck.symbol, total_cost: deck.total_cost, elapsed_ms: 0 });
+    })
+    .catch((e: unknown) => {
+      if (!cancelled) h.onError(e instanceof ApiError && e.status === 404 ? "Not found on screener.in: no primary documents to research." : String(e));
+    });
+  return () => { cancelled = true; };
 }
 
 function simulateFromFixture(symbol: string, h: StreamHandlers): () => void {

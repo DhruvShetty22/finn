@@ -6,6 +6,7 @@
 import asyncio
 import json
 import os
+import threading
 from datetime import timedelta
 
 from datetime import datetime
@@ -169,15 +170,33 @@ async def research_deck(symbol: str, format: str | None = None, refresh: bool = 
         except LookupError as e:
             raise HTTPException(404, str(e))
 
-    async def events():
-        s = session()
-        it = research.stream(s, symbol, refresh)
+    # One worker thread owns the session for the whole deck build and hands events over a queue, so a client
+    # that disconnects mid-stream never makes us close a session another thread is still using.
+    loop = asyncio.get_running_loop()
+    q: asyncio.Queue = asyncio.Queue()
+    stop = threading.Event()
+
+    def produce():
         try:
-            while (item := await asyncio.to_thread(next, it, None)) is not None:
+            with session() as s:
+                for item in research.stream(s, symbol, refresh):
+                    loop.call_soon_threadsafe(q.put_nowait, item)
+                    if stop.is_set():
+                        break
+        except Exception as e:  # surface as an SSE error event instead of a torn stream
+            loop.call_soon_threadsafe(q.put_nowait, ("error", {"message": f"{symbol}: research failed ({type(e).__name__})"}))
+        finally:
+            loop.call_soon_threadsafe(q.put_nowait, None)
+
+    threading.Thread(target=produce, daemon=True).start()
+
+    async def events():
+        try:
+            while (item := await q.get()) is not None:
                 ev, data = item
                 yield {"event": ev, "data": json.dumps(data, default=str)}
         finally:
-            s.close()
+            stop.set()
 
     return EventSourceResponse(events())
 
