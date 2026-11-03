@@ -20,6 +20,7 @@ jobs:
     steps:
       - name: configured?
         id: cfg
+        working-directory: .  # runs before checkout, when backend/ doesn't exist yet
         run: if [ -n "$DATABASE_URL" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "DATABASE_URL secret not set; skipping"; fi
       - uses: actions/checkout@v4
         if: steps.cfg.outputs.ok
