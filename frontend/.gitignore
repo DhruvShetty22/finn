@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# copied from contracts/fixtures by `npm run dev` (dev-only sample data, never shipped)
+/public/fixtures
