@@ -5,7 +5,7 @@
     uv run python -m finn.jobs filings [--days N]  # fetch → classify → enrich cards
     uv run python -m finn.jobs enrich [--days N] [--retry]
     uv run python -m finn.jobs fundamentals SYMBOL [SYMBOL ...]
-    uv run python -m finn.jobs copy-db URL     # copy this DB (incl. LLM cache) into another, e.g. production Postgres
+    uv run python -m finn.jobs copy-db env:NEON_URL  # copy this DB (incl. LLM cache) into another; URL or env:VAR
     uv run python -m finn.jobs prewarm         # retry missing cards, build research decks (→ theses) for demo set + holdings
 """
 
@@ -51,8 +51,10 @@ def copy_db(url: str) -> None:
     from finn.db import engine as src
 
     import os
-    os.environ["DATABASE_URL"] = url
-    dst = create_engine(_db_url(), pool_pre_ping=True)
+    if url.startswith("env:"):  # read the target from the environment (.env) so it never shows up in a command line
+        url = os.environ[url.removeprefix("env:")]
+    os.environ["DATABASE_URL"] = url.replace("-pooler.", ".")  # bulk load over Neon's direct host, not the pooler
+    dst = create_engine(_db_url(), pool_pre_ping=True, connect_args={"prepare_threshold": None})
     SQLModel.metadata.create_all(dst)
     with src.connect() as r, dst.begin() as w:
         for table in reversed(SQLModel.metadata.sorted_tables):
@@ -62,6 +64,7 @@ def copy_db(url: str) -> None:
             for i in range(0, len(rows), 500):
                 w.execute(table.insert(), rows[i:i + 500])
             log.info("copied %s: %d rows", table.name, len(rows))
+    log.info("target: %s", dst.url.render_as_string(hide_password=True).split("@")[-1].split("/")[0])
 
 
 def main() -> None:

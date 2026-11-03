@@ -144,8 +144,9 @@ class ResearchCache(SQLModel, table=True):
 
 
 # research runs transcript extractions in threads; SQLite needs to allow that and wait out short write locks
-_sqlite = {"check_same_thread": False, "timeout": 30} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=_sqlite)
+# Postgres: no server-side prepared statements, so a transaction-mode pooler (Neon's "-pooler" host) is safe
+CONNECT_ARGS = {"check_same_thread": False, "timeout": 30} if DATABASE_URL.startswith("sqlite") else {"prepare_threshold": None}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=CONNECT_ARGS)
 
 
 def init_db() -> None:
