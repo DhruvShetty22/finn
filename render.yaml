@@ -5,8 +5,9 @@ services:
     runtime: docker
     plan: free
     region: singapore
-    rootDir: backend
-    dockerfilePath: ./Dockerfile
+    # Docker paths resolve from the repo root (not rootDir), so spell them out
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
